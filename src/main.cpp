@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <SPI.h>
 
 /*
 Felix Love
@@ -102,3 +103,4 @@ String processData(int sensorValue, String sensor)
   }
   return processedData;
 }
+
