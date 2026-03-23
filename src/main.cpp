@@ -1,6 +1,23 @@
 #include <Arduino.h>
 
+/*
+Felix Love
+22153
+NSN: 0145498404
+
+What does this program do?
+
+What does the electronics do?
+
+What is the project meant to do and how?
+
+*/
+
+// DEBUG MODE - set to true to enable debug output, false to disable
 bool DEBUG = true;
+
+// pin declaration variables
+
 
 void setup() {
 // initialize serial communication at 115200 bits per second:
