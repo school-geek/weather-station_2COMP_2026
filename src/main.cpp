@@ -24,9 +24,9 @@ bool DEBUG = true;
 
 void setup() {
 // initialize serial communication at 115200 bits per second:
-Serial.begin(115200);
-while(!Serial) {
-} // wait for serial port to connect. Needed for native USB port only
+  Serial.begin(115200);
+  while(!Serial) {
+  }
 }
 
 void loop() {
@@ -81,7 +81,7 @@ void infoOutput(String str)
   Serial.println(str);
 }
 
-// data processing funcs
+/* data processing funcs */
 
 // process raw sensor data and return a formatted string
 // processData(25, "Temp") will return "25 °C"
