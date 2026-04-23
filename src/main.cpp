@@ -1,10 +1,12 @@
 #include <Arduino.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7789.h>
 #include <SPI.h>
 
 /*
 Felix Love
 22153
-NSN: 0145498404
+NSN: 145498404
 
 What does this program do?
 
@@ -23,6 +25,8 @@ bool DEBUG = true;
 void setup() {
 // initialize serial communication at 115200 bits per second:
 Serial.begin(115200);
+while(!Serial) {
+} // wait for serial port to connect. Needed for native USB port only
 }
 
 void loop() {
