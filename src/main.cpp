@@ -2,6 +2,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <SPI.h>
+#include <WiFi.h>
+#include <WebServer.h>
 
 /*
 Felix Love
@@ -19,6 +21,17 @@ What is the project meant to do and how?
 // DEBUG MODE - set to true to enable debug output, false to disable
 bool DEBUG = true;
 
+// wifi credentials
+const char* ssid = "Code-ESP32";
+const char* password = "1209";
+
+// create a web server object on port 80
+WebServer server(80);
+void handleRoot() {
+  server.send(200, "text/html", "<h1>ESP32 Online</h1>");
+}
+
+
 // pin declaration variables
 
 
@@ -27,6 +40,18 @@ void setup() {
   Serial.begin(115200);
   while(!Serial) {
   }
+// create WiFi access point
+  WiFi.softAP(ssid, password);
+
+  server.on("/", handleRoot);
+  server.begin();
+  infoOutput(WiFi.softAPIP().toString());
+  if (DEBUG)
+  {
+    debugOutputSTR("WiFi Access Point created with SSID: " + String(ssid));
+  }
+
+
 }
 
 void loop() {
