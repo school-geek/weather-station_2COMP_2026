@@ -1,7 +1,8 @@
 #include <Arduino.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_ST7789.h>
 #include <SPI.h>
+
+#include <TFT_eSPI.h>
+#include "esp_wifi.h"
 #include <WiFi.h>
 #include <WebServer.h>
 
@@ -18,45 +19,24 @@ What is the project meant to do and how?
 
 */
 
+TFT_eSPI tft = TFT_eSPI();
+
 // DEBUG MODE - set to true to enable debug output, false to disable
 bool DEBUG = true;
 
 // wifi credentials
 const char* ssid = "Code-ESP32";
-const char* password = "1209";
+const char* password = "12345678";
 
 // create a web server object on port 80
-WebServer server(80);
-void handleRoot() {
-  server.send(200, "text/html", "<h1>ESP32 Online</h1>");
-}
+//WebServer server(80);
+//void handleRoot() {
+//  server.send(200, "text/html", "<h1>ESP32 Online</h1>");
+//}
 
 
 // pin declaration variables
 
-
-void setup() {
-// initialize serial communication at 115200 bits per second:
-  Serial.begin(115200);
-  while(!Serial) {
-  }
-// create WiFi access point
-  WiFi.softAP(ssid, password);
-
-  server.on("/", handleRoot);
-  server.begin();
-  infoOutput(WiFi.softAPIP().toString());
-  if (DEBUG)
-  {
-    debugOutputSTR("WiFi Access Point created with SSID: " + String(ssid));
-  }
-
-
-}
-
-void loop() {
-  Serial.println("Hello, world!");
-}
 
 /* 
 
@@ -133,3 +113,64 @@ String processData(int sensorValue, String sensor)
   return processedData;
 }
 
+/* setup and loop functions */
+
+void setup() {
+// initialize serial communication at 115200 bits per second:
+  Serial.begin(115200);
+  while(!Serial) {
+  }
+
+  // initialize the TFT display
+  tft.init();
+  tft.setRotation(1); // try 0–3 if wrong
+  tft.fillScreen(TFT_BLACK);
+
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(10, 10);
+  tft.println("Booting...");
+  
+  // create WiFi access point
+  WiFi.mode(WIFI_OFF);
+  WiFi.disconnect(true, true);
+  delay(1500);
+
+  WiFi.mode(WIFI_AP);
+  delay(1000);
+
+  // IMPORTANT: force RF calibration re-init
+  esp_wifi_stop();
+  delay(200);
+  esp_wifi_start();
+  delay(500);
+
+  bool ok = WiFi.softAP(ssid, password, 6, 0, 4);
+
+  delay(500);
+
+  Serial.println(ok ? "[INFO] AP STARTED" : "[ERROR] AP FAILED");
+  Serial.print("[INFO] AP IP: ");
+  Serial.println(WiFi.softAPIP());
+
+  //server.on("/", handleRoot);
+  //server.begin();
+
+  tft.fillScreen(TFT_BLACK);
+  tft.setCursor(10, 10);
+  tft.println("ESP32 AP Ready");
+  tft.println("");
+  tft.print("IP: ");
+  //tft.println(ip);
+  
+  if (DEBUG)
+  {
+    debugOutputSTR("WiFi Access Point created with SSID: " + String(ssid));
+  }
+}
+
+void loop() {
+  //server.handleClient();
+  delay(1000);
+  Serial.println("Looping...");
+}
