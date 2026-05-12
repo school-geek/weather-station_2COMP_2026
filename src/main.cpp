@@ -1,9 +1,11 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+// display libraries
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 
+// wifi and web server libraries
 #include "esp_wifi.h"
 #include <WiFi.h>
 #include <WebServer.h>
@@ -35,7 +37,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 float tempValue = 1.1; // Example temperature value
 
 /* -------------------------------------------------------------------------- */
-/* Debug / Info Functions                                                      */
+/* Debug / Info Functions                                                     */
 /* -------------------------------------------------------------------------- */
 
 void debugOutputSTR(String data)
@@ -68,7 +70,7 @@ void infoOutput(String str)
 }
 
 /* -------------------------------------------------------------------------- */
-/* Data Processing                                                             */
+/* Data Processing                                                            */
 /* -------------------------------------------------------------------------- */
 
 String processData(int sensorValue, String sensor)
@@ -85,7 +87,7 @@ String processData(int sensorValue, String sensor)
 }
 
 /* -------------------------------------------------------------------------- */
-/* Web Server                                                                  */
+/* Web Server                                                                 */
 /* -------------------------------------------------------------------------- */
 
 WebServer server(80);
@@ -173,7 +175,10 @@ void handleSet()
   if (server.hasArg("temp"))
   {
     tempValue = server.arg("temp").toFloat();
-    debugOutputSTR("Temp updated from web: " + String(tempValue));
+    
+    if (DEBUG) {
+      debugOutputSTR("Received new temp value from web: " + String(tempValue));
+    }
 
     // Update the TFT display with the new temperature
     tft.fillRect(0, 80, tft.width(), 30, ST77XX_BLACK);
@@ -188,12 +193,14 @@ void handleSet()
 }
 
 /* -------------------------------------------------------------------------- */
-/* TFT Display Initialization                                                  */
+/* TFT Display Initialization                                                 */
 /* -------------------------------------------------------------------------- */
 
 void initDisplay()
 {
-  Serial.println("[INFO] ========== TFT DISPLAY SETUP ==========");
+  if (DEBUG) {
+    debugOutputSTR("== TFT DISPLAY SETUP ==");
+  }
 
   // Enable power to the TFT and STEMMA/Qwiic circuitry
   pinMode(TFT_I2C_POWER, OUTPUT);
@@ -207,8 +214,14 @@ void initDisplay()
   // Initialize the ST7789 display (135x240 pixels)
   tft.init(135, 240);
   tft.setRotation(1); // Landscape orientation
+ 
+  if (DEBUG) {
+    int width = tft.width();
+    int height = tft.height();
+    debugOutputSTR("TFT width=" + String(width) + " height=" + String(height));
 
-  Serial.printf("[INFO] TFT width=%d height=%d\n", tft.width(), tft.height());
+    debugOutputSTR("Colour test starting...");
+  }
 
   // Quick color test
   tft.fillScreen(ST77XX_RED);
@@ -224,11 +237,10 @@ void initDisplay()
   tft.setCursor(10, 20);
   tft.setTextColor(ST77XX_WHITE);
   tft.setTextSize(2);
-  tft.println("SUCCESS!");
+  tft.println("Weather Station");
 
   tft.setTextSize(1);
   tft.setCursor(10, 50);
-  tft.println("SPI communication works");
 
   tft.setTextSize(2);
   tft.setCursor(10, 80);
@@ -236,7 +248,7 @@ void initDisplay()
   tft.print(tempValue);
   tft.print(" C");
 
-  Serial.println("[INFO] ========== TFT READY ==========");
+  infoOutput("-- TFT READY --");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -249,11 +261,11 @@ void setup()
   while (!Serial) {}
   delay(1000);
 
-  // Initialize the TFT display
+  /* Initialize the TFT display */
   initDisplay();
 
-  // Wi-Fi Access Point setup
-  Serial.println("[INFO] ========== WIFI SETUP START ==========");
+  /* Wi-Fi Access Point setup */
+  infoOutput("== WIFI SETUP START ==");
 
   WiFi.mode(WIFI_OFF);
   WiFi.disconnect(true, true);
@@ -265,8 +277,15 @@ void setup()
   bool ok = WiFi.softAP(ssid, password, 6, 0, 4);
 
   Serial.println(ok ? "[INFO] AP STARTED" : "[ERROR] AP FAILED");
-  Serial.print("[INFO] AP IP: ");
-  Serial.println(WiFi.softAPIP());
+
+  if (DEBUG && ok) {
+    debugOutputSTR("AP STARTED");
+
+    debugOutputSTR("AP SSID: " + String(ssid));
+    debugOutputSTR("AP Password: " + String(password));
+
+    debugOutputSTR("AP IP: " + WiFi.softAPIP().toString());
+  }
 
   // Update display with AP IP address
   tft.setTextSize(1);
@@ -280,12 +299,10 @@ void setup()
   server.on("/data", handleData);
   server.on("/set", handleSet);
   server.begin();
-
-  debugOutputSTR("WiFi Access Point created with SSID: " + String(ssid));
 }
 
 /* -------------------------------------------------------------------------- */
-/* Main Loop                                                                   */
+/* Main Loop                                                                  */
 /* -------------------------------------------------------------------------- */
 
 void loop()
