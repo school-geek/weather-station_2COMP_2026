@@ -1,0 +1,594 @@
+﻿Processing adafruit_feather_esp32s3_reversetft (platform: espressif32@6.6.0; board: adafruit_feather_esp32s3_reversetft; board_build.mcu: esp32s3; framework: arduino; upload_protocol: esptool; upload_speed: 921600; upload_flags: --before=no_reset, --after=hard_reset; lib_deps: adafruit/Adafruit BusIO@^1.14.5, SPI, Wire, bodmer/TFT_eSPI@^2.5.43, adafruit/Adafruit GFX Library@^1.12.6, adafruit/Adafruit ST7735 and ST7789 Library@^1.11.0)
+--------------------------------------------------------------------------------
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/adafruit_feather_esp32s3_reversetft.html
+PLATFORM: Espressif 32 (6.6.0) > Adafruit Feather ESP32-S3 Reverse TFT
+HARDWARE: ESP32S3 240MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 3.20014.231204 (2.0.14) 
+ - tool-esptoolpy @ 1.40501.0 (4.5.1) 
+ - tool-openocd-esp32 @ 2.1100.20220706 (11.0) 
+ - toolchain-riscv32-esp @ 8.4.0+2021r2-patch5 
+ - toolchain-xtensa-esp32s3 @ 8.4.0+2021r2-patch5
+Warning! An extra UF2 bootloader image is already added!
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 38 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- Adafruit BusIO @ 1.17.4 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit BusIO)
+|   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|-- TFT_eSPI @ 2.5.43 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\TFT_eSPI)
+|   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|   |-- SPIFFS @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPIFFS)
+|   |   |-- FS @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\FS)
+|   |-- FS @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\FS)
+|   |-- LittleFS @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\LittleFS)
+|   |   |-- FS @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\FS)
+|-- Adafruit GFX Library @ 1.12.6 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit GFX Library)
+|   |-- Adafruit BusIO @ 1.17.4 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit BusIO)
+|   |   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|-- Adafruit ST7735 and ST7789 Library @ 1.11.0 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit ST7735 and ST7789 Library)
+|   |-- Adafruit GFX Library @ 1.12.6 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit GFX Library)
+|   |   |-- Adafruit BusIO @ 1.17.4 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit BusIO)
+|   |   |   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |   |   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|   |   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|   |-- Adafruit BusIO @ 1.17.4 (License: Unknown, Path: C:\Users\felix\Desktop\COMP SCI\Weather Staion\.pio\libdeps\adafruit_feather_esp32s3_reversetft\Adafruit BusIO)
+|   |   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|   |-- Wire @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\Wire)
+|   |-- SPI @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\SPI)
+|-- WebServer @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\WebServer)
+|   |-- WiFi @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\WiFi)
+|   |-- FS @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\FS)
+|-- WiFi @ 2.0.0 (License: Unknown, Path: C:\Users\felix\.platformio\packages\framework-arduinoespressif32@3.20014.231204\libraries\WiFi)
+Building in release mode
+<lambda>(["checkprogsize"], [".pio\build\adafruit_feather_esp32s3_reversetft\firmware.elf"])
+MethodWrapper(["checkprogsize"], [".pio\build\adafruit_feather_esp32s3_reversetft\firmware.elf"])
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  17.2% (used 56512 bytes from 327680 bytes)
+Flash: [=====     ]  54.5% (used 785385 bytes from 1441792 bytes)
+.pio\build\adafruit_feather_esp32s3_reversetft\firmware.elf  :
+
+section                                                                                                                                                                   size         addr
+
+.rtc.text                                                                                                                                                                    0   1611653120
+
+.rtc.dummy                                                                                                                                                                   0   1611653120
+
+.rtc.force_fast                                                                                                                                                              0   1611653120
+
+.rtc_noinit                                                                                                                                                                 16   1342177280
+
+.rtc.force_slow                                                                                                                                                              0   1342177296
+
+.iram0.vectors                                                                                                                                                            1027   1077362688
+
+.iram0.text                                                                                                                                                              63815   1077363716
+
+.dram0.dummy                                                                                                                                                             48460   1070104576
+
+.dram0.data                                                                                                                                                              22144   1070153040
+
+.noinit                                                                                                                                                                      0   1070175184
+
+.dram0.bss                                                                                                                                                               34368   1070175184
+
+.flash.text                                                                                                                                                             566787   1107296288
+
+.flash_rodata_dummy                                                                                                                                                     589824   1006632992
+
+.flash.appdesc                                                                                                                                                             256   1007222816
+
+.flash.rodata                                                                                                                                                           131612   1007223072
+
+.flash.rodata_noload                                                                                                                                                     15664   1007354684
+
+.iram0.text_end                                                                                                                                                              0   1077427531
+
+.iram0.data                                                                                                                                                                  1   1077427531
+
+.iram0.bss                                                                                                                                                                   0   1077427532
+
+.dram0.heap_start                                                                                                                                                            0   1070209552
+
+.xt.prop                                                                                                                                                                481224            0
+
+.xt.lit                                                                                                                                                                  15840            0
+
+.xtensa.info                                                                                                                                                                56            0
+
+.comment                                                                                                                                                                   140            0
+
+.xt.lit._ZN3UriD5Ev                                                                                                                                                          8            0
+
+.xt.lit._ZN3Uri9canHandleERK6StringRSt6vectorIS0_SaIS0_EE                                                                                                                    0            0
+
+.xt.lit._ZNK3Uri5cloneEv                                                                                                                                                     0            0
+
+.xt.prop._ZN3UriD5Ev                                                                                                                                                        12            0
+
+.xt.prop._ZN3Uri9canHandleERK6StringRSt6vectorIS0_SaIS0_EE                                                                                                                  36            0
+
+.xt.prop._ZNK3Uri5cloneEv                                                                                                                                                   84            0
+
+.xt.prop._ZN3Uri12initPathArgsERSt6vectorI6StringSaIS1_EE                                                                                                                   36            0
+
+.xt.prop._ZNSt17_Function_handlerIFvvEPS0_E9_M_invokeERKSt9_Any_data                                                                                                        36            0
+
+.xt.prop._ZNSt14_Function_base13_Base_managerIPFvvEE10_M_managerERSt9_Any_dataRKS4_St18_Manager_operation                                                                   60            0
+
+.xt.prop._ZN3UriD2Ev                                                                                                                                                        36            0
+
+.xt.prop._ZN3UriD0Ev                                                                                                                                                        36            0
+
+.xt.prop._ZNSt14_Function_baseD2Ev                                                                                                                                          36            0
+
+.xt.prop._ZTV3Uri                                                                                                                                                           12            0
+
+.xt.lit._ZN8TFT_eSPI13end_nin_writeEv                                                                                                                                        0            0
+
+.xt.lit._ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                                             8            0
+
+.xt.lit._ZN8TFT_eSPID5Ev                                                                                                                                                     0            0
+
+.xt.prop._ZN8TFT_eSPI13end_nin_writeEv                                                                                                                                      48            0
+
+.xt.prop._ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                                           12            0
+
+.xt.prop._ZN8TFT_eSPID5Ev                                                                                                                                                    0            0
+
+.xt.prop._ZN5Print17availableForWriteEv                                                                                                                                     36            0
+
+.xt.prop._ZN5Print5flushEv                                                                                                                                                  36            0
+
+.xt.prop._ZNK6String6lengthEv                                                                                                                                               72            0
+
+.xt.prop._ZNSt16_Sp_counted_baseILN9__gnu_cxx12_Lock_policyE2EE10_M_releaseEv                                                                                               60            0
+
+.xt.prop._ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EED2Ev                                                                                                           36            0
+
+.xt.prop._ZN8TFT_eSPID2Ev                                                                                                                                                   36            0
+
+.xt.prop._ZN8TFT_eSPID0Ev                                                                                                                                                   36            0
+
+.xt.prop._ZTV8TFT_eSPI                                                                                                                                                      12            0
+
+.xt.lit._ZNSt8functionIFv18arduino_event_id_t20arduino_event_info_tEEC5ERKS3_                                                                                                0            0
+
+.xt.lit._ZN15WiFiEventCbListC5ERKS_                                                                                                                                          0            0
+
+.xt.prop._ZNSt8functionIFv18arduino_event_id_t20arduino_event_info_tEEC5ERKS3_                                                                                               0            0
+
+.xt.prop._ZN15WiFiEventCbListC5ERKS_                                                                                                                                         0            0
+
+.xt.prop._ZNSt8functionIFv18arduino_event_id_t20arduino_event_info_tEEC2ERKS3_                                                                                              60            0
+
+.xt.prop._ZN15WiFiEventCbListC2ERKS_                                                                                                                                        36            0
+
+.xt.lit._ZN22FunctionRequestHandler9canUploadE6String                                                                                                                        0            0
+
+.xt.lit._ZN9WebServer21_currentClientWrite_PEPKcj                                                                                                                            8            0
+
+.xt.lit._ZN14RequestHandlerD5Ev                                                                                                                                              8            0
+
+.xt.lit._ZN9WebServer19_currentClientWriteEPKcj                                                                                                                              0            0
+
+.xt.lit._ZN9WebServer6clientEv                                                                                                                                               8            0
+
+.xt.lit._ZNK6String10startsWithEPKc                                                                                                                                          0            0
+
+.xt.lit._ZNK6String8endsWithEPKc                                                                                                                                             0            0
+
+.xt.lit._ZNK6String9substringEj                                                                                                                                              0            0
+
+.xt.lit._ZN22FunctionRequestHandlerD5Ev                                                                                                                                      8            0
+
+.xt.lit._ZNSt8functionIFvvEEC5ERKS1_                                                                                                                                         0            0
+
+.xt.lit._ZNKSt8functionIFvvEEclEv                                                                                                                                            0            0
+
+.xt.lit._ZN22FunctionRequestHandler6uploadER9WebServer6StringR10HTTPUpload                                                                                                   0            0
+
+.xt.lit._ZN22FunctionRequestHandler6handleER9WebServer11http_method6String                                                                                                   0            0
+
+.xt.lit._ZNSt10unique_ptrI10HTTPUploadSt14default_deleteIS0_EED5Ev                                                                                                           0            0
+
+.xt.prop._ZN22FunctionRequestHandler9canUploadE6String                                                                                                                      96            0
+
+.xt.prop._ZN9WebServer21_currentClientWrite_PEPKcj                                                                                                                          48            0
+
+.xt.prop._ZN14RequestHandlerD5Ev                                                                                                                                            12            0
+
+.xt.prop._ZN9WebServer19_currentClientWriteEPKcj                                                                                                                            36            0
+
+.xt.prop._ZN9WebServer6clientEv                                                                                                                                             72            0
+
+.xt.prop._ZNK6String10startsWithEPKc                                                                                                                                        60            0
+
+.xt.prop._ZNK6String8endsWithEPKc                                                                                                                                           60            0
+
+.xt.prop._ZNK6String9substringEj                                                                                                                                            60            0
+
+.xt.prop._ZN22FunctionRequestHandlerD5Ev                                                                                                                                    12            0
+
+.xt.prop._ZNSt8functionIFvvEEC5ERKS1_                                                                                                                                        0            0
+
+.xt.prop._ZNKSt8functionIFvvEEclEv                                                                                                                                          48            0
+
+.xt.prop._ZN22FunctionRequestHandler6uploadER9WebServer6StringR10HTTPUpload                                                                                                 72            0
+
+.xt.prop._ZN22FunctionRequestHandler6handleER9WebServer11http_method6String                                                                                                 72            0
+
+.xt.prop._ZNSt10unique_ptrI10HTTPUploadSt14default_deleteIS0_EED5Ev                                                                                                          0            0
+
+.xt.prop._ZN6Stream9readBytesEPhj                                                                                                                                           36            0
+
+.xt.prop._ZN14RequestHandler9canHandleE11http_method6String                                                                                                                 36            0
+
+.xt.prop._ZN14RequestHandler9canUploadE6String                                                                                                                              36            0
+
+.xt.prop._ZN14RequestHandler6handleER9WebServer11http_method6String                                                                                                         36            0
+
+.xt.prop._ZN14RequestHandler6uploadER9WebServer6StringR10HTTPUpload                                                                                                         36            0
+
+.xt.prop._ZN22FunctionRequestHandler9canHandleE11http_method6String                                                                                                         36            0
+
+.xt.prop._ZN14RequestHandlerD2Ev                                                                                                                                            60            0
+
+.xt.prop._ZN14RequestHandlerD0Ev                                                                                                                                            36            0
+
+.xt.prop._ZN22FunctionRequestHandlerD2Ev                                                                                                                                    36            0
+
+.xt.prop._ZN22FunctionRequestHandlerD0Ev                                                                                                                                    36            0
+
+.xt.prop._ZNSt8functionIFvvEEC2ERKS1_                                                                                                                                       60            0
+
+.xt.prop._ZNSt10unique_ptrI10HTTPUploadSt14default_deleteIS0_EED2Ev                                                                                                         36            0
+
+.xt.prop._ZTV14RequestHandler                                                                                                                                               12            0
+
+.xt.prop._ZTV22FunctionRequestHandler                                                                                                                                       12            0
+
+.xt.prop._ZTV9WebServer                                                                                                                                                     12            0
+
+.xt.lit._ZN9WebServer15RequestArgumentD5Ev                                                                                                                                   0            0
+
+.xt.lit._ZN9WebServer15RequestArgumentC5Ev                                                                                                                                   8            0
+
+.xt.prop._ZN9WebServer15RequestArgumentD5Ev                                                                                                                                  0            0
+
+.xt.prop._ZN9WebServer15RequestArgumentC5Ev                                                                                                                                 12            0
+
+.xt.prop._ZN9WebServer15RequestArgumentD2Ev                                                                                                                                 36            0
+
+.xt.prop._ZN9WebServer15RequestArgumentC2Ev                                                                                                                                 84            0
+
+.xt.lit._ZN9IPAddressD5Ev                                                                                                                                                    0            0
+
+.xt.prop._ZN9IPAddressD5Ev                                                                                                                                                   0            0
+
+.xt.prop._ZN9IPAddressD2Ev                                                                                                                                                  36            0
+
+.xt.prop._ZN9IPAddressD0Ev                                                                                                                                                  36            0
+
+.xt.prop._ZTV9IPAddress                                                                                                                                                     12            0
+
+.xt.lit._ZN5Print5writeEPKc                                                                                                                                                  0            0
+
+.xt.prop._ZN5Print5writeEPKc                                                                                                                                                48            0
+
+.xt.prop._ZTV6Stream                                                                                                                                                        12            0
+
+.xt.prop._ZTV6USBCDC                                                                                                                                                        12            0
+
+.xt.lit._ZN6String4initEv                                                                                                                                                    8            0
+
+.xt.prop._ZN6String4initEv                                                                                                                                                  48            0
+
+.xt.prop._ZNK6String3lenEv                                                                                                                                                  60            0
+
+.xt.prop._ZN6String6setLenEi                                                                                                                                                72            0
+
+.xt.lit._ZN12StreamStringD5Ev                                                                                                                                                0            0
+
+.xt.prop._ZN12StreamStringD5Ev                                                                                                                                               0            0
+
+.xt.prop._ZN12StreamStringD2Ev                                                                                                                                              36            0
+
+.xt.prop._ZN12StreamStringD0Ev                                                                                                                                              36            0
+
+.xt.prop._ZTV12StreamString                                                                                                                                                 12            0
+
+.xt.lit._ZN3nvs4Lock4initEv                                                                                                                                                  0            0
+
+.xt.prop._ZN3nvs4Lock4initEv                                                                                                                                                72            0
+
+.xt.prop._ZN14intrusive_listI14NVSHandleEntryE5eraseENS1_8iteratorE                                                                                                         84            0
+
+.xt.lit._ZN14intrusive_listIN3nvs7Storage14NamespaceEntryEE17clearAndFreeNodesEv                                                                                             0            0
+
+.xt.prop._ZN14intrusive_listIN3nvs7Storage14NamespaceEntryEE17clearAndFreeNodesEv                                                                                          108            0
+
+.xt.prop._ZN14intrusive_listIN3nvs7Storage14NamespaceEntryEE9push_backEPS2_                                                                                                 60            0
+
+.xt.prop._ZTVN3nvs15NVSHandleSimpleE                                                                                                                                        12            0
+
+.xt.lit._ZN3nvs12NVSPartitionD5Ev                                                                                                                                            0            0
+
+.xt.prop._ZN3nvs12NVSPartitionD5Ev                                                                                                                                           0            0
+
+.xt.prop._ZN3nvs12NVSPartitionD2Ev                                                                                                                                          36            0
+
+.xt.prop._ZN3nvs12NVSPartitionD0Ev                                                                                                                                          36            0
+
+.xt.prop._ZTVN3nvs12NVSPartitionE                                                                                                                                           12            0
+
+.xt.lit._ZN3nvs19NVSPartitionManagerD5Ev                                                                                                                                     0            0
+
+.xt.prop._ZN3nvs19NVSPartitionManagerD5Ev                                                                                                                                    0            0
+
+.xt.prop._ZN3nvs19NVSPartitionManagerD2Ev                                                                                                                                   36            0
+
+.xt.prop._ZN3nvs19NVSPartitionManagerD0Ev                                                                                                                                   36            0
+
+.xt.prop._ZN14intrusive_listIN3nvs12NVSPartitionEE5eraseENS2_8iteratorE                                                                                                     84            0
+
+.xt.prop._ZN14intrusive_listIN3nvs15NVSHandleSimpleEE5eraseENS2_8iteratorE                                                                                                  84            0
+
+.xt.prop._ZTVN3nvs19NVSPartitionManagerE                                                                                                                                    12            0
+
+.xt.prop._ZN14intrusive_listIN3nvs8HashList13HashListBlockEE5eraseENS3_8iteratorE                                                                                           84            0
+
+.xt.lit._ZN3nvs4ItemC5EhNS_8ItemTypeEhPKch                                                                                                                                   0            0
+
+.xt.prop._ZN3nvs4ItemC5EhNS_8ItemTypeEhPKch                                                                                                                                  0            0
+
+.xt.prop._ZN3nvs20isVariableLengthTypeENS_8ItemTypeE                                                                                                                        48            0
+
+.xt.prop._ZN3nvs4ItemC2EhNS_8ItemTypeEhPKch                                                                                                                                 60            0
+
+.xt.prop._ZNK19CompressedEnumTableIN3nvs4Page10EntryStateELj2ELj126EE3getEjPS2_                                                                                             48            0
+
+.xt.lit._ZN14intrusive_listIN3nvs4PageEE5clearEv                                                                                                                             0            0
+
+.xt.prop._ZN14intrusive_listIN3nvs4PageEE5clearEv                                                                                                                           60            0
+
+.xt.prop._ZN14intrusive_listIN3nvs4PageEE9push_backEPS1_                                                                                                                    60            0
+
+.xt.prop._ZN14intrusive_listIN3nvs4PageEE5eraseENS2_8iteratorE                                                                                                              84            0
+
+.xt.prop._ZTISt9exception                                                                                                                                                   12            0
+
+.xt.prop._ZTISt9bad_alloc                                                                                                                                                   12            0
+
+.xt.lit._ZNK9__gnu_cxx24__concurrence_lock_error4whatEv                                                                                                                      8            0
+
+.xt.lit._ZNK9__gnu_cxx26__concurrence_unlock_error4whatEv                                                                                                                    8            0
+
+.xt.lit._ZN9__gnu_cxx24__concurrence_lock_errorD5Ev                                                                                                                          8            0
+
+.xt.lit._ZN9__gnu_cxx26__concurrence_unlock_errorD5Ev                                                                                                                        8            0
+
+.xt.lit._ZN9__gnu_cxx7__mutex4lockEv                                                                                                                                         8            0
+
+.xt.lit._ZN9__gnu_cxx13__scoped_lockD5Ev                                                                                                                                     8            0
+
+.xt.prop._ZNK9__gnu_cxx24__concurrence_lock_error4whatEv                                                                                                                    48            0
+
+.xt.prop._ZNK9__gnu_cxx26__concurrence_unlock_error4whatEv                                                                                                                  48            0
+
+.xt.prop._ZN9__gnu_cxx24__concurrence_lock_errorD5Ev                                                                                                                        12            0
+
+.xt.prop._ZN9__gnu_cxx26__concurrence_unlock_errorD5Ev                                                                                                                      12            0
+
+.xt.prop._ZN9__gnu_cxx7__mutex4lockEv                                                                                                                                       48            0
+
+.xt.prop._ZN9__gnu_cxx13__scoped_lockD5Ev                                                                                                                                   12            0
+
+.xt.prop._ZN9__gnu_cxx24__concurrence_lock_errorD2Ev                                                                                                                        36            0
+
+.xt.prop._ZN9__gnu_cxx26__concurrence_unlock_errorD2Ev                                                                                                                      36            0
+
+.xt.prop._ZN9__gnu_cxx24__concurrence_lock_errorD0Ev                                                                                                                        36            0
+
+.xt.prop._ZN9__gnu_cxx26__concurrence_unlock_errorD0Ev                                                                                                                      36            0
+
+.xt.prop._ZN9__gnu_cxx13__scoped_lockD2Ev                                                                                                                                   72            0
+
+.xt.prop._ZTIN9__gnu_cxx24__concurrence_lock_errorE                                                                                                                         12            0
+
+.xt.prop._ZTIN9__gnu_cxx26__concurrence_unlock_errorE                                                                                                                       12            0
+
+.xt.prop._ZTVN9__gnu_cxx24__concurrence_lock_errorE                                                                                                                         12            0
+
+.xt.prop._ZTVN9__gnu_cxx26__concurrence_unlock_errorE                                                                                                                       12            0
+
+.xt.prop._ZTVN10__cxxabiv117__class_type_infoE                                                                                                                              12            0
+
+.xt.prop._ZTISt17bad_function_call                                                                                                                                          12            0
+
+.xt.prop._ZTVSt17bad_function_call                                                                                                                                          12            0
+
+.xt.prop._ZTVN10__cxxabiv120__si_class_type_infoE                                                                                                                           12            0
+
+.xt.prop._ZTVSt9bad_alloc                                                                                                                                                   12            0
+
+.xt.lit._ZN2fs4File9readBytesEPcj                                                                                                                                            0            0
+
+.xt.lit._ZN2fs4FileD5Ev                                                                                                                                                      8            0
+
+.xt.prop._ZN2fs4File9readBytesEPcj                                                                                                                                          36            0
+
+.xt.prop._ZN2fs4FileD5Ev                                                                                                                                                    12            0
+
+.xt.prop._ZN2fs4FileD2Ev                                                                                                                                                    36            0
+
+.xt.prop._ZN2fs4FileD0Ev                                                                                                                                                    36            0
+
+.xt.prop._ZTVN2fs4FileE                                                                                                                                                     12            0
+
+.xt.lit._ZN10SPIFFSImplD5Ev                                                                                                                                                  0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                               0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                                     0            0
+
+.xt.prop._ZN10SPIFFSImplD5Ev                                                                                                                                                 0            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                              0            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                                   36            0
+
+.xt.prop._ZN10SPIFFSImplD2Ev                                                                                                                                                36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EED2Ev                                                                                             36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv                                                                                   48            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info                                                                  36            0
+
+.xt.prop._ZN10SPIFFSImplD0Ev                                                                                                                                                36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EED0Ev                                                                                             36            0
+
+.xt.prop._ZTV10SPIFFSImpl                                                                                                                                                   12            0
+
+.xt.prop._ZTVSt15_Sp_counted_ptrIP10SPIFFSImplLN9__gnu_cxx12_Lock_policyE2EE                                                                                                12            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                   0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                         0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                       0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                             0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv                                                                             0            0
+
+.xt.lit._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv                                                                         0            0
+
+.xt.lit._ZN18WiFiClientRxBuffer11r_availableEv                                                                                                                               8            0
+
+.xt.lit._ZN18WiFiClientRxBuffer10fillBufferEv                                                                                                                                8            0
+
+.xt.lit._ZN18WiFiClientRxBuffer4readEPhj                                                                                                                                     0            0
+
+.xt.lit._ZNSt12__shared_ptrI22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE5resetIS0_EENSt9enable_ifIXsrSt21__sp_is_constructibleIS0_T_E5valueEvE4typeEPS7_           8            0
+
+.xt.lit._ZNSt12__shared_ptrI18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE5resetIS0_EENSt9enable_ifIXsrSt21__sp_is_constructibleIS0_T_E5valueEvE4typeEPS7_               8            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                  0            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                       36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                      0            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                           36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv                                                                           48            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv                                                                       48            0
+
+.xt.prop._ZN18WiFiClientRxBuffer11r_availableEv                                                                                                                             84            0
+
+.xt.prop._ZN18WiFiClientRxBuffer10fillBufferEv                                                                                                                             144            0
+
+.xt.prop._ZN18WiFiClientRxBuffer4readEPhj                                                                                                                                  180            0
+
+.xt.prop._ZNSt12__shared_ptrI22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE5resetIS0_EENSt9enable_ifIXsrSt21__sp_is_constructibleIS0_T_E5valueEvE4typeEPS7_         96            0
+
+.xt.prop._ZNSt12__shared_ptrI18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE5resetIS0_EENSt9enable_ifIXsrSt21__sp_is_constructibleIS0_T_E5valueEvE4typeEPS7_             96            0
+
+.xt.prop._ZN10WiFiClientcvbEv                                                                                                                                               36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EED2Ev                                                                                     36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EED2Ev                                                                                 36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info                                                          36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info                                                      36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EED0Ev                                                                                 36            0
+
+.xt.prop._ZNSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EED0Ev                                                                                     36            0
+
+.xt.prop._ZTV10WiFiClient                                                                                                                                                   12            0
+
+.xt.prop._ZTVSt15_Sp_counted_ptrIP22WiFiClientSocketHandleLN9__gnu_cxx12_Lock_policyE2EE                                                                                    12            0
+
+.xt.prop._ZTVSt15_Sp_counted_ptrIP18WiFiClientRxBufferLN9__gnu_cxx12_Lock_policyE2EE                                                                                        12            0
+
+.xt.lit._ZN10WiFiServerD5Ev                                                                                                                                                  8            0
+
+.xt.prop._ZN10WiFiServerD5Ev                                                                                                                                                12            0
+
+.xt.prop._ZN10WiFiServer5writeEh                                                                                                                                            36            0
+
+.xt.prop._ZN10WiFiServerD2Ev                                                                                                                                                36            0
+
+.xt.prop._ZN10WiFiServerD0Ev                                                                                                                                                36            0
+
+.xt.prop._ZTV10WiFiServer                                                                                                                                                   12            0
+
+.xt.lit._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info                                                     8            0
+
+.xt.lit._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                                0            0
+
+.xt.lit._ZNSt15__allocated_ptrISaISt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS1_ELN9__gnu_cxx12_Lock_policyE2EEEED5Ev                                                       0            0
+
+.xt.lit._ZSt11make_sharedI11VFSFileImplJP7VFSImplRPKcS5_EESt10shared_ptrIT_EDpOT0_                                                                                           8            0
+
+.xt.lit._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                      0            0
+
+.xt.prop._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info                                                   48            0
+
+.xt.prop._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED5Ev                                                                               0            0
+
+.xt.prop._ZNSt15__allocated_ptrISaISt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS1_ELN9__gnu_cxx12_Lock_policyE2EEEED5Ev                                                      0            0
+
+.xt.prop._ZSt11make_sharedI11VFSFileImplJP7VFSImplRPKcS5_EESt10shared_ptrIT_EDpOT0_                                                                                         72            0
+
+.xt.prop._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE10_M_destroyEv                                                                    36            0
+
+.xt.prop._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED2Ev                                                                              36            0
+
+.xt.prop._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EED0Ev                                                                              36            0
+
+.xt.prop._ZNSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE10_M_disposeEv                                                                    36            0
+
+.xt.prop._ZNSt15__allocated_ptrISaISt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS1_ELN9__gnu_cxx12_Lock_policyE2EEEED2Ev                                                     36            0
+
+.xt.prop._ZTV11VFSFileImpl                                                                                                                                                  12            0
+
+.xt.prop._ZTVSt23_Sp_counted_ptr_inplaceI11VFSFileImplSaIS0_ELN9__gnu_cxx12_Lock_policyE2EE                                                                                 12            0
+
+.xt.prop._ZZNSt19_Sp_make_shared_tag5_S_tiEvE5__tag                                                                                                                         12            0
+
+.debug_frame                                                                                                                                                            141168            0
+
+.debug_info                                                                                                                                                            6713829            0
+
+.debug_abbrev                                                                                                                                                           509355            0
+
+.debug_aranges                                                                                                                                                           54280            0
+
+.debug_ranges                                                                                                                                                           141368            0
+
+.debug_line                                                                                                                                                            2630834            0
+
+.debug_str                                                                                                                                                              574856            0
+
+.debug_loc                                                                                                                                                             1119973            0
+
+Total                                                                                                                                                                 13863241
+========================= [SUCCESS] Took 5.61 seconds =========================
