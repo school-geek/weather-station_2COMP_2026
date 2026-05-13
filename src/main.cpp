@@ -22,7 +22,7 @@ What does this program do?
 */
 
 // DEBUG MODE - set to true to enable debug output, false to disable
-bool DEBUG = true;
+bool DEBUG = false;
 
 unsigned long lastPrint = 0;
 
@@ -56,12 +56,26 @@ void debugOutputINT(String sensor, int data)
   Serial.println(data);
 }
 
-int readSensorData(String sensor, byte pin)
+int anaReadSensorData(String sensor, byte pin)
 {
   int sensorValue = analogRead(pin);
-  debugOutputINT(sensor, sensorValue);
+  if (DEBUG)
+  {
+    debugOutputINT(sensor, sensorValue);
+  }
   return sensorValue;
 }
+
+int digiReadSensorData(String sensor, byte pin)
+{
+  int sensorValue = digitalRead(pin);
+  if (DEBUG)
+  {
+    debugOutputINT(sensor, sensorValue);
+  }
+  return sensorValue;
+}
+
 
 void infoOutput(String str)
 {
@@ -176,9 +190,7 @@ void handleSet()
   {
     tempValue = server.arg("temp").toFloat();
     
-    if (DEBUG) {
-      debugOutputSTR("Received new temp value from web: " + String(tempValue));
-    }
+    debugOutputSTR("Received new temp value from web: " + String(tempValue));
 
     // Update the TFT display with the new temperature
     tft.fillRect(0, 80, tft.width(), 30, ST77XX_BLACK);
@@ -198,9 +210,7 @@ void handleSet()
 
 void initDisplay()
 {
-  if (DEBUG) {
-    debugOutputSTR("== TFT DISPLAY SETUP ==");
-  }
+  debugOutputSTR("== TFT DISPLAY SETUP ==");
 
   // Enable power to the TFT and STEMMA/Qwiic circuitry
   pinMode(TFT_I2C_POWER, OUTPUT);
@@ -276,8 +286,6 @@ void setup()
 
   bool ok = WiFi.softAP(ssid, password, 6, 0, 4);
 
-  Serial.println(ok ? "[INFO] AP STARTED" : "[ERROR] AP FAILED");
-
   if (DEBUG && ok) {
     debugOutputSTR("AP STARTED");
 
@@ -286,6 +294,11 @@ void setup()
 
     debugOutputSTR("AP IP: " + WiFi.softAPIP().toString());
   }
+  else if (!ok)
+  {
+    debugOutputSTR("[ERROR] Failed to start AP");
+  }
+  
 
   // Update display with AP IP address
   tft.setTextSize(1);
@@ -309,7 +322,7 @@ void loop()
 {
   server.handleClient();
 
-  if (millis() - lastPrint > 1000)
+  if (millis() - lastPrint > 1000 && DEBUG)
   {
     Serial.println("Looping...");
     lastPrint = millis();
