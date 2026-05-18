@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <SPI.h>
 
 // display libraries
+#include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 
@@ -36,6 +36,13 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 // Global variables
 float tempValue = 1.1; // Example temperature value
 
+// GPIO pin definitions
+constexpr int TEMPSENSOR = 5;
+
+constexpr int BUTTON_D0 = 0;
+constexpr int BUTTON_D1 = 1;
+constexpr int BUTTON_D2 = 2;
+
 /* -------------------------------------------------------------------------- */
 /* Debug / Info Functions                                                     */
 /* -------------------------------------------------------------------------- */
@@ -56,9 +63,9 @@ void debugOutputINT(String sensor, int data)
   Serial.println(data);
 }
 
-int anaReadSensorData(String sensor, byte pin)
+int anaReadSensorData(String sensor, byte pin_var)
 {
-  int sensorValue = analogRead(pin);
+  int sensorValue = analogRead(pin_var);
   if (DEBUG)
   {
     debugOutputINT(sensor, sensorValue);
@@ -66,9 +73,9 @@ int anaReadSensorData(String sensor, byte pin)
   return sensorValue;
 }
 
-int digiReadSensorData(String sensor, byte pin)
+int digiReadSensorData(String sensor, byte pin_var)
 {
-  int sensorValue = digitalRead(pin);
+  int sensorValue = digitalRead(pin_var);
   if (DEBUG)
   {
     debugOutputINT(sensor, sensorValue);
@@ -262,7 +269,7 @@ void initDisplay()
 }
 
 /* -------------------------------------------------------------------------- */
-/* Setup                                                                       */
+/* Setup                                                                      */
 /* -------------------------------------------------------------------------- */
 
 void setup()
@@ -312,6 +319,13 @@ void setup()
   server.on("/data", handleData);
   server.on("/set", handleSet);
   server.begin();
+
+  /* Pin initialization */
+  pinMode(TEMPSENSOR, INPUT);
+
+  pinMode(BUTTON_D0, INPUT);
+  pinMode(BUTTON_D1, INPUT);
+  pinMode(BUTTON_D2, INPUT);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -322,9 +336,12 @@ void loop()
 {
   server.handleClient();
 
-  if (millis() - lastPrint > 1000 && DEBUG)
+  if (DEBUG)
   {
+   if (millis() - lastPrint > 1000)
+   {
     Serial.println("Looping...");
     lastPrint = millis();
+   }
   }
 }
