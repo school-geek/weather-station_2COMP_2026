@@ -362,7 +362,9 @@ void setup()
 
 void loop()
 {
+  // web server and websocket handling
   server.handleClient();
+  webSocket.loop();
 
   if (DEBUG)
   {
@@ -373,7 +375,8 @@ void loop()
    }
   }
 
-  byte D0_state = digitalRead(BUTTON_D0);
-  byte D1_state = digitalRead(BUTTON_D1);
-  byte D2_state = digitalRead(BUTTON_D2);
+  
+  byte D0_state = digiReadSensorData("D0", BUTTON_D0);
+  byte D1_state = digiReadSensorData("D1", BUTTON_D1);
+  byte D2_state = digiReadSensorData("D2", BUTTON_D2);
 }
