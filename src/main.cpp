@@ -9,6 +9,7 @@
 #include "esp_wifi.h"
 #include <WiFi.h>
 #include <WebServer.h>
+#include <WebSocketsServer.h>
 
 /*
 Felix Love
@@ -24,7 +25,9 @@ What does this program do?
 // DEBUG MODE - set to true to enable debug output, false to disable
 bool DEBUG = true;
 
-unsigned long lastPrint = 0;
+/* -------------------------------------------------------------------------- */
+/* Library class definitions and Library related stuff                        */
+/* -------------------------------------------------------------------------- */
 
 // Wi-Fi credentials
 const char* ssid = "Code-ESP32";
@@ -33,10 +36,20 @@ const char* password = "12345678";
 // Built-in TFT display object (ST7789 controller)
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
+// websocket server
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+/* -------------------------------------------------------------------------- */
+/* Variables                                                                  */
+/* -------------------------------------------------------------------------- */
+
 // Global variables
 float tempValue = 1.1; // Example temperature value
 
-// GPIO pin definitions
+// Timing variable for debug output
+unsigned long lastPrint = 0;
+
+/* GPIO pin definitions */
 const int TEMPSENSOR = 5;
 
 const int BUTTON_D0 = 0;
@@ -108,18 +121,29 @@ String processData(int sensorValue, String sensor)
 }
 
 /* -------------------------------------------------------------------------- */
-/* Web Server                                                                 */
+/* Web Server & WebSocket Handling                                            */
 /* -------------------------------------------------------------------------- */
 
-WebServer server(80);
+// WebSocket data sending
+void sendToWebsite(String data)
+{
+  if (DEBUG)
+  {
+    debugOutputSTR("WS send: " + data);
+  }
 
+  webSocket.broadcastTXT(data);
+}
+
+WebServer server(80);
 void handleRoot()
 {
   String page = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ESP32 Panel</title>
+  <title>ESP32 WebSocket Panel</title>
+
   <style>
     body {
       font-family: Arial;
@@ -127,6 +151,7 @@ void handleRoot()
       color: white;
       text-align: center;
     }
+
     .card {
       background: #1e1e1e;
       padding: 20px;
@@ -134,48 +159,79 @@ void handleRoot()
       border-radius: 10px;
       width: 300px;
     }
+
     input, button {
       padding: 10px;
       margin-top: 10px;
-      width: 80%; 
+      width: 80%;
       border-radius: 5px;
       border: none;
     }
+
     button {
       background: #00c3ff;
       color: black;
       font-weight: bold;
+      cursor: pointer;
+    }
+
+    #status {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 10px;
     }
   </style>
 </head>
+
 <body>
 
 <h1>ESP32 Control Panel</h1>
 
 <div class="card">
-  <h2>Temperature</h2>
+  <h2>Live Data</h2>
   <p id="temp">--</p>
 
-  <input type="number" id="inputTemp" placeholder="Set temp">
-  <button onclick="sendTemp()">Update</button>
+  <input type="number" id="inputTemp" placeholder="Send value">
+  <button onclick="sendData()">Send</button>
+
+  <div id="status">Connecting...</div>
 </div>
 
 <script>
-function updateData() {
-  fetch('/data')
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('temp').innerText = data.temp + ' °C';
-    });
+let ws;
+
+function connectWS()
+{
+  ws = new WebSocket("ws://" + location.hostname + ":81");
+
+  ws.onopen = function()
+  {
+    document.getElementById("status").innerText = "Connected";
+  };
+
+  ws.onclose = function()
+  {
+    document.getElementById("status").innerText = "Disconnected (retrying...)";
+    setTimeout(connectWS, 2000);
+  };
+
+  ws.onmessage = function(event)
+  {
+    document.getElementById("temp").innerText = event.data;
+  };
 }
 
-function sendTemp() {
-  let val = document.getElementById('inputTemp').value;
-  fetch('/set?temp=' + val);
+function sendData()
+{
+  let val = document.getElementById("inputTemp").value;
+
+  if (ws && ws.readyState === 1)
+  {
+    ws.send("set:" + val);
+  }
 }
 
-setInterval(updateData, 2000);
-updateData();
+connectWS();
 </script>
 
 </body>
@@ -183,32 +239,6 @@ updateData();
 )rawliteral";
 
   server.send(200, "text/html", page);
-}
-
-void handleData()
-{
-  String json = "{\"temp\":" + String(tempValue) + "}";
-  server.send(200, "application/json", json);
-}
-
-void handleSet()
-{
-  if (server.hasArg("temp"))
-  {
-    tempValue = server.arg("temp").toFloat();
-    
-    debugOutputSTR("Received new temp value from web: " + String(tempValue));
-
-    // Update the TFT display with the new temperature
-    tft.fillRect(0, 80, tft.width(), 30, ST77XX_BLACK);
-    tft.setCursor(10, 80);
-    tft.setTextColor(ST77XX_CYAN);
-    tft.setTextSize(2);
-    tft.print(tempValue);
-    tft.print(" C");
-  }
-
-  server.send(200, "text/plain", "OK");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -316,8 +346,6 @@ void setup()
 
   // Web server routes
   server.on("/", handleRoot);
-  server.on("/data", handleData);
-  server.on("/set", handleSet);
   server.begin();
 
   /* Pin initialization */
@@ -345,18 +373,7 @@ void loop()
    }
   }
 
-  byte D0_state = digitalRead(0);
-  byte D1_state = digitalRead(1);
-  byte D2_state = digitalRead(2);
-
-  Serial.print("D0: ");
-  Serial.print(D0_state);
-
-  Serial.print(" D1: ");
-  Serial.print(D1_state);
-
-  Serial.print(" D2: ");
-  Serial.println(D2_state);
-
-  Serial.println("-------------------");
+  byte D0_state = digitalRead(BUTTON_D0);
+  byte D1_state = digitalRead(BUTTON_D1);
+  byte D2_state = digitalRead(BUTTON_D2);
 }
