@@ -22,7 +22,7 @@ What does this program do?
 */
 
 // DEBUG MODE - set to true to enable debug output, false to disable
-bool DEBUG = false;
+bool DEBUG = true;
 
 unsigned long lastPrint = 0;
 
@@ -37,11 +37,11 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 float tempValue = 1.1; // Example temperature value
 
 // GPIO pin definitions
-constexpr int TEMPSENSOR = 5;
+const int TEMPSENSOR = 5;
 
-constexpr int BUTTON_D0 = 0;
-constexpr int BUTTON_D1 = 1;
-constexpr int BUTTON_D2 = 2;
+const int BUTTON_D0 = 0;
+const int BUTTON_D1 = 1;
+const int BUTTON_D2 = 2;
 
 /* -------------------------------------------------------------------------- */
 /* Debug / Info Functions                                                     */
@@ -323,9 +323,9 @@ void setup()
   /* Pin initialization */
   pinMode(TEMPSENSOR, INPUT);
 
-  pinMode(BUTTON_D0, INPUT);
-  pinMode(BUTTON_D1, INPUT);
-  pinMode(BUTTON_D2, INPUT);
+  pinMode(BUTTON_D0, INPUT_PULLUP);
+  pinMode(BUTTON_D1, INPUT_PULLDOWN);
+  pinMode(BUTTON_D2, INPUT_PULLDOWN);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -344,4 +344,19 @@ void loop()
     lastPrint = millis();
    }
   }
+
+  byte D0_state = digitalRead(0);
+  byte D1_state = digitalRead(1);
+  byte D2_state = digitalRead(2);
+
+  Serial.print("D0: ");
+  Serial.print(D0_state);
+
+  Serial.print(" D1: ");
+  Serial.print(D1_state);
+
+  Serial.print(" D2: ");
+  Serial.println(D2_state);
+
+  Serial.println("-------------------");
 }
