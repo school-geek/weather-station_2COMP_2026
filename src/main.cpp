@@ -11,6 +11,10 @@
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 
+// sensor libraries
+#include <Adafruit_AHTX0.h>
+#include <Adafruit_BMP280.h>
+
 /*
 Felix Love
 22153
@@ -23,7 +27,10 @@ What does this program do?
 */
 
 // DEBUG MODE - set to true to enable debug output, false to disable
-bool DEBUG = true;
+bool DEBUG = false;
+
+// VERBOSE DEBUGING MDOE - set to true for more detailed debug output, false for concise output
+bool verbose = false;
 
 /* -------------------------------------------------------------------------- */
 /* Library class definitions and Library related stuff                        */
@@ -39,15 +46,31 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 // websocket server
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+Adafruit_BMP280 bmp;
+Adafruit_AHTX0 aht;
+
 /* -------------------------------------------------------------------------- */
 /* Variables                                                                  */
 /* -------------------------------------------------------------------------- */
 
-// Global variables
-float tempValue = 1.1; // Example temperature value
+/* Global variables */
+float tempSensorValue = 0;
 
 // Timing variable for debug output
 unsigned long lastPrint = 0;
+
+struct SensorData
+{
+  float bmpTemp;
+  float bmpPressure;
+
+  float ahtTemp;
+  float ahtHumidity;
+
+  // future sensors go here
+  float extra1;
+  float extra2;
+};
 
 /* GPIO pin definitions */
 const int TEMPSENSOR = 5;
@@ -55,6 +78,9 @@ const int TEMPSENSOR = 5;
 const int BUTTON_D0 = 0;
 const int BUTTON_D1 = 1;
 const int BUTTON_D2 = 2;
+
+const int SDA_PIN = 3;
+const int SCL_PIN = 4;
 
 /* -------------------------------------------------------------------------- */
 /* Debug / Info Functions                                                     */
@@ -79,7 +105,7 @@ void debugOutputINT(String sensor, int data)
 int anaReadSensorData(String sensor, byte pin_var)
 {
   int sensorValue = analogRead(pin_var);
-  if (DEBUG)
+  if (DEBUG && verbose)
   {
     debugOutputINT(sensor, sensorValue);
   }
@@ -89,7 +115,7 @@ int anaReadSensorData(String sensor, byte pin_var)
 int digiReadSensorData(String sensor, byte pin_var)
 {
   int sensorValue = digitalRead(pin_var);
-  if (DEBUG)
+  if (DEBUG && verbose)
   {
     debugOutputINT(sensor, sensorValue);
   }
@@ -107,22 +133,69 @@ void infoOutput(String str)
 /* Data Processing                                                            */
 /* -------------------------------------------------------------------------- */
 
-String processData(int sensorValue, String sensor)
+String processData(SensorData data)
 {
-  String processedData = "";
+  String out = "";
 
-  if (sensor == "Temp")
+  // BMP280
+  if (!isnan(data.bmpTemp) && !isnan(data.bmpPressure))
   {
-    processedData = String(sensorValue) + " °C";
+    out += "BMP Temp: " + String(data.bmpTemp) + " °C";
+    out += " | Pressure: " + String(data.bmpPressure) + " hPa";
+  }
+  else
+  {
+    out += "BMP: invalid";
   }
 
-  debugOutputSTR("Processed data: " + processedData);
-  return processedData;
+  out += " || ";
+
+  // AHT20
+  if (!isnan(data.ahtTemp) && !isnan(data.ahtHumidity))
+  {
+    out += "AHT Temp: " + String(data.ahtTemp) + " °C";
+    out += " | Hum: " + String(data.ahtHumidity) + " %";
+  }
+  else
+  {
+    out += "AHT: invalid";
+  }
+
+  debugOutputSTR(out);
+  return out;
 }
 
 /* -------------------------------------------------------------------------- */
 /* Web Server & WebSocket Handling                                            */
 /* -------------------------------------------------------------------------- */
+
+// WebSocket Event Handler
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
+{
+  if (type == WStype_TEXT)
+  {
+    String message = "";
+    for (size_t i = 0; i < length; i++)
+    {
+      message += (char) payload[i];
+    }
+    
+    if (DEBUG)
+    {
+      debugOutputSTR("WS received: " + message);
+    }
+    
+    if (message.startsWith("set:"))
+    {
+      String valueStr = message.substring(4);
+      tempSensorValue = valueStr.toFloat();
+      if (DEBUG)
+      {
+        debugOutputSTR("Temperature updated to: " + String(tempSensorValue));
+      }
+    }
+  }
+}
 
 // WebSocket data sending
 void sendToWebsite(String data)
@@ -292,11 +365,41 @@ void initDisplay()
   tft.setTextSize(2);
   tft.setCursor(10, 80);
   tft.setTextColor(ST77XX_CYAN);
-  tft.print(tempValue);
+  tft.print(tempSensorValue);
   tft.print(" C");
 
   infoOutput("-- TFT READY --");
 }
+
+/* -------------------------------------------------------------------------- */
+/* Sensor Initialization                                                      */
+/* -------------------------------------------------------------------------- */
+
+void initBMP280()
+{
+  if (bmp.begin(0x76)) {
+    Serial.println("BMP280 found at 0x76.");
+  } else if (bmp.begin(0x77)) {
+    Serial.println("BMP280 found at 0x77.");
+  } else {
+    Serial.println("BMP280 not found.");
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+void initAHTX0()
+{
+  if (aht.begin()) {
+    Serial.println("AHT20 found.");
+  } else {
+    Serial.println("AHT20 not found.");
+  }
+
+  Serial.println();
+  Serial.println("Setup complete.");
+}
+
+
 
 /* -------------------------------------------------------------------------- */
 /* Setup                                                                      */
@@ -348,12 +451,20 @@ void setup()
   server.on("/", handleRoot);
   server.begin();
 
+  // WebSocket setup
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
+
   /* Pin initialization */
   pinMode(TEMPSENSOR, INPUT);
 
   pinMode(BUTTON_D0, INPUT_PULLUP);
   pinMode(BUTTON_D1, INPUT_PULLDOWN);
   pinMode(BUTTON_D2, INPUT_PULLDOWN);
+
+  Wire.begin(SDA_PIN, SCL_PIN);
+  delay(100);
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -379,4 +490,71 @@ void loop()
   byte D0_state = digiReadSensorData("D0", BUTTON_D0);
   byte D1_state = digiReadSensorData("D1", BUTTON_D1);
   byte D2_state = digiReadSensorData("D2", BUTTON_D2);
+
+  String serialInput = Serial.readString();
+  if(serialInput == "update")
+  {
+    infoOutput("Updating sensor data...");
+    infoOutput("COMMENTED OUT");
+    /*
+    int tempSensorValue = anaReadSensorData("temp", TEMPSENSOR);
+    String processedTemp = processData(tempSensorValue, "temp");
+    sendToWebsite(processedTemp);
+
+    // Update TFT display with new temperature value
+    tft.fillRect(10, 80, 100, 30, ST77XX_BLACK); // Clear previous value
+    tft.setCursor(10, 80);
+    tft.setTextColor(ST77XX_CYAN);
+    tft.print(tempSensorValue);
+    tft.print(" C");
+    */
+  }
+  else if (serialInput.startsWith("send "))
+  {
+    // Extract everything after "send "
+    String dataToSend = serialInput.substring(5);
+
+    // Send the extracted data to the website
+    sendToWebsite(dataToSend);
+
+    // Optional confirmation in Serial Monitor
+    infoOutput("Sent to website: ");
+    infoOutput(dataToSend);
+  }
+
+  if (D0_state == LOW)
+  {
+    ;
+  }
+
+  SensorData data;
+
+  // BMP280
+  if (bmp.begin(0x76) || bmp.begin(0x77))
+  {
+  data.bmpTemp = bmp.readTemperature();
+  data.bmpPressure = bmp.readPressure() / 100.0;
+  }
+  else
+  {
+    data.bmpTemp = NAN;
+    data.bmpPressure = NAN;
+  }
+
+  // AHT20
+  sensors_event_t humidity, temp;
+  if (aht.getEvent(&humidity, &temp))
+  {
+    data.ahtTemp = temp.temperature;
+    data.ahtHumidity = humidity.relative_humidity;
+  }
+  else
+  {
+    data.ahtTemp = NAN;
+    data.ahtHumidity = NAN;
+  }
+
+  // Process everything
+  String output = processData(data);
+  sendToWebsite(output);
 }
