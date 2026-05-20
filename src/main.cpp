@@ -264,7 +264,7 @@ void handleRoot()
   <h2>Live Data</h2>
   <p id="temp">--</p>
 
-  <input type="number" id="inputTemp" placeholder="Send value">
+  <input type="text" id="inputTemp" placeholder="Send value">
   <button onclick="sendData()">Send</button>
 
   <div id="status">Connecting...</div>
@@ -390,13 +390,10 @@ void initBMP280()
 void initAHTX0()
 {
   if (aht.begin()) {
-    Serial.println("AHT20 found.");
+    infoOutput("AHT20 found.");
   } else {
-    Serial.println("AHT20 not found.");
+    infoOutput("[ERROR] AHT20 not found.");
   }
-
-  Serial.println();
-  Serial.println("Setup complete.");
 }
 
 
@@ -462,6 +459,9 @@ void setup()
   pinMode(BUTTON_D1, INPUT_PULLDOWN);
   pinMode(BUTTON_D2, INPUT_PULLDOWN);
 
+  initBMP280();
+  initAHTX0();
+
   Wire.begin(SDA_PIN, SCL_PIN);
   delay(100);
 
@@ -477,6 +477,7 @@ void loop()
   server.handleClient();
   webSocket.loop();
 
+/*
   if (DEBUG)
   {
    if (millis() - lastPrint > 1000)
@@ -485,7 +486,7 @@ void loop()
     lastPrint = millis();
    }
   }
-
+*/
   
   byte D0_state = digiReadSensorData("D0", BUTTON_D0);
   byte D1_state = digiReadSensorData("D1", BUTTON_D1);
