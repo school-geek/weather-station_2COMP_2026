@@ -185,15 +185,56 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       debugOutputSTR("WS received: " + message);
     }
     
-    if (message.startsWith("set:"))
-    {
-      String valueStr = message.substring(4);
-      tempSensorValue = valueStr.toFloat();
-      if (DEBUG)
-      {
-        debugOutputSTR("Temperature updated to: " + String(tempSensorValue));
-      }
-    }
+    if (message.startsWith("command:"))
+{
+  String cmd = message.substring(8); // remove "command:"
+
+  cmd.trim();
+
+  // Split command + argument
+  int commaIndex = cmd.indexOf(',');
+
+  String action = "";
+  String value = "";
+
+  if (commaIndex == -1)
+  {
+    action = cmd;
+  }
+  else
+  {
+    action = cmd.substring(0, commaIndex);
+    value  = cmd.substring(commaIndex + 1);
+  }
+
+  action.trim();
+  value.trim();
+
+  if (DEBUG)
+  {
+    debugOutputSTR("CMD: " + action + " | VAL: " + value);
+  }
+
+  // =========================
+  // COMMAND ROUTING
+  // =========================
+
+  if (action == "update")
+  {
+    webSocket.sendTXT(num, "updated");
+  }
+
+  else if (action == "status")
+  {
+;
+//    webSocket.sendTXT(num, statusMsg);
+  }
+
+  else
+  {
+    webSocket.sendTXT(num, "ERR: unknown command");
+  }
+}
   }
 }
 
@@ -264,7 +305,7 @@ void handleRoot()
   <h2>Live Data</h2>
   <p id="temp">--</p>
 
-  <input type="text" id="inputTemp" placeholder="Send value">
+  <input type="text" id="inputTemp" placeholder="Send command...">
   <button onclick="sendData()">Send</button>
 
   <div id="status">Connecting...</div>
@@ -300,7 +341,7 @@ function sendData()
 
   if (ws && ws.readyState === 1)
   {
-    ws.send("set:" + val);
+    ws.send("command:" + val);
   }
 }
 
@@ -378,11 +419,11 @@ void initDisplay()
 void initBMP280()
 {
   if (bmp.begin(0x76)) {
-    Serial.println("BMP280 found at 0x76.");
+    infoOutput("BMP280 found at 0x76.");
   } else if (bmp.begin(0x77)) {
-    Serial.println("BMP280 found at 0x77.");
+    infoOutput("BMP280 found at 0x77.");
   } else {
-    Serial.println("BMP280 not found.");
+    infoOutput("BMP280 not found.");
   }
 }
 
@@ -467,6 +508,40 @@ void setup()
 
 }
 
+void updateSensors()
+{
+  SensorData data;
+
+  // BMP280
+  if (bmp.begin(0x76) || bmp.begin(0x77))
+  {
+  data.bmpTemp = bmp.readTemperature();
+  data.bmpPressure = bmp.readPressure() / 100.0;
+  }
+  else
+  {
+    data.bmpTemp = NAN;
+    data.bmpPressure = NAN;
+  }
+
+  // AHT20
+  sensors_event_t humidity, temp;
+  if (aht.getEvent(&humidity, &temp))
+  {
+    data.ahtTemp = temp.temperature;
+    data.ahtHumidity = humidity.relative_humidity;
+  }
+  else
+  {
+    data.ahtTemp = NAN;
+    data.ahtHumidity = NAN;
+  }
+
+  // Process everything
+  String output = processData(data);
+  sendToWebsite(output);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Main Loop                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -477,16 +552,11 @@ void loop()
   server.handleClient();
   webSocket.loop();
 
-/*
-  if (DEBUG)
-  {
-   if (millis() - lastPrint > 1000)
+   if (millis() - lastPrint > 5000)
    {
-    Serial.println("Looping...");
     lastPrint = millis();
+    updateSensors();
    }
-  }
-*/
   
   byte D0_state = digiReadSensorData("D0", BUTTON_D0);
   byte D1_state = digiReadSensorData("D1", BUTTON_D1);
@@ -525,37 +595,16 @@ void loop()
 
   if (D0_state == LOW)
   {
-    ;
+    infoOutput("Button D0 pressed!");
+  }
+  
+  if (D1_state == HIGH)
+  {
+    infoOutput("Button D1 pressed!");
   }
 
-  SensorData data;
-
-  // BMP280
-  if (bmp.begin(0x76) || bmp.begin(0x77))
+  if (D2_state == HIGH)
   {
-  data.bmpTemp = bmp.readTemperature();
-  data.bmpPressure = bmp.readPressure() / 100.0;
+    infoOutput("Button D2 pressed!");
   }
-  else
-  {
-    data.bmpTemp = NAN;
-    data.bmpPressure = NAN;
-  }
-
-  // AHT20
-  sensors_event_t humidity, temp;
-  if (aht.getEvent(&humidity, &temp))
-  {
-    data.ahtTemp = temp.temperature;
-    data.ahtHumidity = humidity.relative_humidity;
-  }
-  else
-  {
-    data.ahtTemp = NAN;
-    data.ahtHumidity = NAN;
-  }
-
-  // Process everything
-  String output = processData(data);
-  sendToWebsite(output);
 }
