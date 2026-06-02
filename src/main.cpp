@@ -12,8 +12,12 @@
 #include <WebSocketsServer.h>
 
 // sensor libraries
+// temperature and pressure sensor
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_BMP280.h>
+
+// light sensor
+#include <Adafruit_LTR390.h>
 
 /*
 Felix Love
@@ -30,15 +34,15 @@ What does this program do?
 bool DEBUG = false;
 
 // VERBOSE DEBUGING MDOE - set to true for more detailed debug output, false for concise output
-bool verbose = false;
+bool VERBOSE = false;
 
 /* -------------------------------------------------------------------------- */
 /* Library class definitions and Library related stuff                        */
 /* -------------------------------------------------------------------------- */
 
 // Wi-Fi credentials
-const char* ssid = "Code-ESP32";
-const char* password = "12345678";
+const char* SSID = "Code-ESP32";
+const char* PASSWORD = "12345678";
 
 // Built-in TFT display object (ST7789 controller)
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
@@ -48,6 +52,11 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 Adafruit_BMP280 bmp;
 Adafruit_AHTX0 aht;
+
+Adafruit_LTR390 ltr;
+
+// presence flags to avoid re-initializing sensors repeatedly
+bool bmpPresent = false;
 
 /* -------------------------------------------------------------------------- */
 /* Variables                                                                  */
@@ -67,14 +76,15 @@ struct SensorData
   float ahtTemp;
   float ahtHumidity;
 
+  float ltrALS;
+  float ltrUVS;
+
   // future sensors go here
   float extra1;
   float extra2;
 };
 
 /* GPIO pin definitions */
-const int TEMPSENSOR = 5;
-
 const int BUTTON_D0 = 0;
 const int BUTTON_D1 = 1;
 const int BUTTON_D2 = 2;
@@ -105,7 +115,7 @@ void debugOutputINT(String sensor, int data)
 int anaReadSensorData(String sensor, byte pin_var)
 {
   int sensorValue = analogRead(pin_var);
-  if (DEBUG && verbose)
+  if (DEBUG && VERBOSE)
   {
     debugOutputINT(sensor, sensorValue);
   }
@@ -115,7 +125,7 @@ int anaReadSensorData(String sensor, byte pin_var)
 int digiReadSensorData(String sensor, byte pin_var)
 {
   int sensorValue = digitalRead(pin_var);
-  if (DEBUG && verbose)
+  if (DEBUG && VERBOSE)
   {
     debugOutputINT(sensor, sensorValue);
   }
@@ -159,6 +169,19 @@ String processData(SensorData data)
   else
   {
     out += "AHT: invalid";
+  }
+
+  out += " || ";
+
+  // LTR390
+  if (!isnan(data.ltrALS) && !isnan(data.ltrUVS))
+  {
+    out += "ALS: " + String(data.ltrALS);
+    out += " | UVS: " + String(data.ltrUVS);
+  }
+  else
+  {
+    out += "LTR390: invalid";
   }
 
   debugOutputSTR(out);
@@ -420,14 +443,16 @@ void initBMP280()
 {
   if (bmp.begin(0x76)) {
     infoOutput("BMP280 found at 0x76.");
+    bmpPresent = true;
   } else if (bmp.begin(0x77)) {
     infoOutput("BMP280 found at 0x77.");
+    bmpPresent = true;
   } else {
     infoOutput("BMP280 not found.");
+    bmpPresent = false;
   }
 }
 
-/* -------------------------------------------------------------------------- */
 void initAHTX0()
 {
   if (aht.begin()) {
@@ -437,6 +462,47 @@ void initAHTX0()
   }
 }
 
+/* 
+Here lies many hours of my life trying to get the LTR390 working, so I hope you appreciate
+ this function.
+
+ As well as the many hours, it also caused me physical pain in the form of electrical shocks 
+ from the breadboard, which I will not forget until the day I die.
+*/
+void initLTR390()
+{
+  if (!ltr.begin()) {
+    infoOutput("[ERROR] LTR390 not found.");
+  } else {
+    infoOutput("LTR390 found.");
+    ltr.enable(true);
+    // Use a faster resolution and moderate gain for quicker reads by default
+    ltr.setGain(LTR390_GAIN_3);
+    ltr.setResolution(LTR390_RESOLUTION_16BIT);
+    // Print configuration for debugging
+    String cfg = "LTR cfg - mode:" + String(ltr.getMode()) + " gain:" + String(ltr.getGain()) + " res:" + String(ltr.getResolution());
+    infoOutput(cfg);
+  }
+}
+
+// Quick I2C scanner to help debug wiring/address issues
+void scanI2C()
+{
+  infoOutput("Scanning I2C bus...");
+  byte count = 0;
+  for (uint8_t addr = 1; addr < 127; addr++) {
+    Wire.beginTransmission(addr);
+    byte err = Wire.endTransmission();
+    if (err == 0) {
+      Serial.print("  Found I2C device at 0x");
+      if (addr < 16) Serial.print("0");
+      Serial.println(addr, HEX);
+      count++;
+    }
+  }
+  if (count == 0) infoOutput("No I2C devices found.");
+  else infoOutput(String(count) + " I2C device(s) found.");
+}
 
 
 /* -------------------------------------------------------------------------- */
@@ -462,13 +528,13 @@ void setup()
   WiFi.mode(WIFI_AP);
   delay(1000);
 
-  bool ok = WiFi.softAP(ssid, password, 6, 0, 4);
+  bool ok = WiFi.softAP(SSID, PASSWORD, 6, 0, 4);
 
   if (DEBUG && ok) {
     debugOutputSTR("AP STARTED");
 
-    debugOutputSTR("AP SSID: " + String(ssid));
-    debugOutputSTR("AP Password: " + String(password));
+    debugOutputSTR("AP SSID: " + String(SSID));
+    debugOutputSTR("AP Password: " + String(PASSWORD));
 
     debugOutputSTR("AP IP: " + WiFi.softAPIP().toString());
   }
@@ -494,18 +560,18 @@ void setup()
   webSocket.onEvent(webSocketEvent);
 
   /* Pin initialization */
-  pinMode(TEMPSENSOR, INPUT);
-
   pinMode(BUTTON_D0, INPUT_PULLUP);
   pinMode(BUTTON_D1, INPUT_PULLDOWN);
   pinMode(BUTTON_D2, INPUT_PULLDOWN);
 
-  initBMP280();
-  initAHTX0();
-
   Wire.begin(SDA_PIN, SCL_PIN);
   delay(100);
+  // show I2C devices to help debug wiring
+  scanI2C();
 
+  initBMP280();
+  initAHTX0();
+  initLTR390();
 }
 
 void updateSensors()
@@ -537,6 +603,53 @@ void updateSensors()
     data.ahtHumidity = NAN;
   }
 
+  /* 
+  Look where the function: initLTR390(); is.
+  As of writing this, it is line 465 to 470.
+  */
+
+  // LTR390
+  if (ltr.enabled())
+  {
+    // ALS (ambient light)
+    ltr.setMode(LTR390_MODE_ALS);
+    ltr.enable(true);
+    // wait up to 500ms for new data
+    unsigned long start = millis();
+    bool gotALS = false;
+    while (millis() - start < 500) {
+      if (ltr.newDataAvailable()) { gotALS = true; break; }
+      delay(20);
+    }
+    if (gotALS) {
+      data.ltrALS = ltr.readALS();
+    } else {
+      data.ltrALS = NAN;
+      infoOutput("LTR ALS: no data");
+    }
+
+    // UVS (UV light)
+    ltr.setMode(LTR390_MODE_UVS);
+    ltr.enable(true);
+    start = millis();
+    bool gotUV = false;
+    while (millis() - start < 500) {
+      if (ltr.newDataAvailable()) { gotUV = true; break; }
+      delay(20);
+    }
+    if (gotUV) {
+      data.ltrUVS = ltr.readUVS();
+    } else {
+      data.ltrUVS = NAN;
+      infoOutput("LTR UVS: no data");
+    }
+  }
+  else
+  {
+    data.ltrALS = NAN;
+    data.ltrUVS = NAN;
+  }
+
   // Process everything
   String output = processData(data);
   sendToWebsite(output);
@@ -552,11 +665,11 @@ void loop()
   server.handleClient();
   webSocket.loop();
 
-   if (millis() - lastPrint > 5000)
-   {
+  if (millis() - lastPrint > 3000)
+  {
     lastPrint = millis();
     updateSensors();
-   }
+  }
   
   byte D0_state = digiReadSensorData("D0", BUTTON_D0);
   byte D1_state = digiReadSensorData("D1", BUTTON_D1);
@@ -565,20 +678,7 @@ void loop()
   String serialInput = Serial.readString();
   if(serialInput == "update")
   {
-    infoOutput("Updating sensor data...");
-    infoOutput("COMMENTED OUT");
-    /*
-    int tempSensorValue = anaReadSensorData("temp", TEMPSENSOR);
-    String processedTemp = processData(tempSensorValue, "temp");
-    sendToWebsite(processedTemp);
-
-    // Update TFT display with new temperature value
-    tft.fillRect(10, 80, 100, 30, ST77XX_BLACK); // Clear previous value
-    tft.setCursor(10, 80);
-    tft.setTextColor(ST77XX_CYAN);
-    tft.print(tempSensorValue);
-    tft.print(" C");
-    */
+    updateSensors();
   }
   else if (serialInput.startsWith("send "))
   {
@@ -593,6 +693,7 @@ void loop()
     infoOutput(dataToSend);
   }
 
+  // Button state logic
   if (D0_state == LOW)
   {
     infoOutput("Button D0 pressed!");
