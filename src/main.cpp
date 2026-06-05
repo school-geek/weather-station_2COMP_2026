@@ -78,6 +78,8 @@ struct SensorData
 
   float ltrALS;
   float ltrUVS;
+  float ltrUVIndex;
+  float ltrLux;
 
   // future sensors go here
   float extra1;
@@ -110,6 +112,22 @@ void debugOutputINT(String sensor, int data)
   Serial.print(sensor);
   Serial.print(": ");
   Serial.println(data);
+}
+
+// Helper function to categorize UV Index
+String getUVCategory(float uvIndex)
+{
+  if (uvIndex < 3) {
+    return "Low";
+  } else if (uvIndex < 6) {
+    return "Moderate";
+  } else if (uvIndex < 8) {
+    return "High";
+  } else if (uvIndex < 11) {
+    return "Very High";
+  } else {
+    return "Extreme";
+  }
 }
 
 int anaReadSensorData(String sensor, byte pin_var)
@@ -176,8 +194,8 @@ String processData(SensorData data)
   // LTR390
   if (!isnan(data.ltrALS) && !isnan(data.ltrUVS))
   {
-    out += "ALS: " + String(data.ltrALS);
-    out += " | UVS: " + String(data.ltrUVS);
+    out += "Light: " + String(data.ltrLux, 1) + " lux";
+    out += " | UV Index: " + String(data.ltrUVIndex, 1) + " (" + getUVCategory(data.ltrUVIndex) + ")";
   }
   else
   {
@@ -405,15 +423,16 @@ void initDisplay()
     debugOutputSTR("TFT width=" + String(width) + " height=" + String(height));
 
     debugOutputSTR("Colour test starting...");
+
+    // Quick color test
+    tft.fillScreen(ST77XX_RED);
+    delay(500);
+    tft.fillScreen(ST77XX_GREEN);
+    delay(500);
+    tft.fillScreen(ST77XX_BLUE);
+    delay(500);
   }
 
-  // Quick color test
-  tft.fillScreen(ST77XX_RED);
-  delay(500);
-  tft.fillScreen(ST77XX_GREEN);
-  delay(500);
-  tft.fillScreen(ST77XX_BLUE);
-  delay(500);
   tft.fillScreen(ST77XX_BLACK);
 
   // Initial text
@@ -463,22 +482,30 @@ void initAHTX0()
 }
 
 /* 
-Here lies many hours of my life trying to get the LTR390 working, so I hope you appreciate
+ Here lies many hours of my life trying to get the LTR390 working, so I hope you appreciate
  this function.
 
  As well as the many hours, it also caused me physical pain in the form of electrical shocks 
- from the breadboard, which I will not forget until the day I die.
+ caused by the breadboard, which I will not forget until the day I die.
+
+ int numberOfHoursSpentOnLTR390 = 5; 
+ approximate, but only he who knows
 */
+
 void initLTR390()
 {
   if (!ltr.begin()) {
     infoOutput("[ERROR] LTR390 not found.");
   } else {
     infoOutput("LTR390 found.");
-    ltr.enable(true);
+    ltr.enable(false);
+    ltr.setMode(LTR390_MODE_UVS);
+
     // Use a faster resolution and moderate gain for quicker reads by default
     ltr.setGain(LTR390_GAIN_3);
     ltr.setResolution(LTR390_RESOLUTION_16BIT);
+    ltr.setThresholds(100, 1000);
+    ltr.enable(true);
     // Print configuration for debugging
     String cfg = "LTR cfg - mode:" + String(ltr.getMode()) + " gain:" + String(ltr.getGain()) + " res:" + String(ltr.getResolution());
     infoOutput(cfg);
@@ -566,8 +593,11 @@ void setup()
 
   Wire.begin(SDA_PIN, SCL_PIN);
   delay(100);
-  // show I2C devices to help debug wiring
-  scanI2C();
+  
+  if(DEBUG){
+    // show I2C devices to help debug wiring/address issues
+    scanI2C();
+  }
 
   initBMP280();
   initAHTX0();
@@ -578,11 +608,11 @@ void updateSensors()
 {
   SensorData data;
 
-  // BMP280
-  if (bmp.begin(0x76) || bmp.begin(0x77))
+  // BMP280 (use initialized flag; don't call begin() repeatedly)
+  if (bmpPresent)
   {
-  data.bmpTemp = bmp.readTemperature();
-  data.bmpPressure = bmp.readPressure() / 100.0;
+    data.bmpTemp = bmp.readTemperature();
+    data.bmpPressure = bmp.readPressure() / 100.0;
   }
   else
   {
@@ -604,43 +634,62 @@ void updateSensors()
   }
 
   /* 
-  Look where the function: initLTR390(); is.
+  Look where the function definition: initLTR390(); is.
   As of writing this, it is line 465 to 470.
   */
 
   // LTR390
   if (ltr.enabled())
   {
-    // ALS (ambient light)
+    // ALS (ambient light) - set config again to ensure the mode is active
     ltr.setMode(LTR390_MODE_ALS);
+    ltr.setGain(LTR390_GAIN_3);
+    ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
-    // wait up to 500ms for new data
+    infoOutput("LTR config before ALS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
+    delay(100);
+
     unsigned long start = millis();
     bool gotALS = false;
-    while (millis() - start < 500) {
+
+    while (millis() - start < 1500) {
       if (ltr.newDataAvailable()) { gotALS = true; break; }
-      delay(20);
+      delay(25);
     }
     if (gotALS) {
-      data.ltrALS = ltr.readALS();
+      uint32_t alsRaw = ltr.readALS();
+      data.ltrALS = alsRaw;
+      data.ltrLux = 0.6 * alsRaw / (3.0 * 1.0);
+      infoOutput("LTR ALS raw: " + String(alsRaw));
     } else {
       data.ltrALS = NAN;
+      data.ltrLux = NAN;
       infoOutput("LTR ALS: no data");
     }
 
     // UVS (UV light)
     ltr.setMode(LTR390_MODE_UVS);
+    ltr.setGain(LTR390_GAIN_3);
+    ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
+    infoOutput("LTR config before UVS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
+    delay(100);
+
     start = millis();
     bool gotUV = false;
-    while (millis() - start < 500) {
+
+    while (millis() - start < 1500) {
       if (ltr.newDataAvailable()) { gotUV = true; break; }
-      delay(20);
+      delay(25);
     }
     if (gotUV) {
-      data.ltrUVS = ltr.readUVS();
+      uint32_t uvRaw = ltr.readUVS();
+      data.ltrUVS = uvRaw;
+      data.ltrUVIndex = uvRaw / 2300.0;
+      infoOutput("LTR UVS raw: " + String(uvRaw));
     } else {
       data.ltrUVS = NAN;
+      data.ltrUVIndex = NAN;
       infoOutput("LTR UVS: no data");
     }
   }
@@ -648,6 +697,8 @@ void updateSensors()
   {
     data.ltrALS = NAN;
     data.ltrUVS = NAN;
+    data.ltrLux = NAN;
+    data.ltrUVIndex = NAN;
   }
 
   // Process everything
