@@ -31,7 +31,7 @@ What does this program do?
 */
 
 // DEBUG MODE - set to true to enable debug output, false to disable
-bool DEBUG = false;
+bool DEBUG = true;
 
 // VERBOSE DEBUGING MDOE - set to true for more detailed debug output, false for concise output
 bool VERBOSE = false;
@@ -157,11 +157,46 @@ void infoOutput(String str)
   Serial.println(str);
 }
 
+float getLTRGainFactor(ltr390_gain_t gain)
+{
+  switch (gain)
+  {
+    case LTR390_GAIN_1: return 1.0;
+    case LTR390_GAIN_3: return 3.0;
+    case LTR390_GAIN_6: return 6.0;
+    case LTR390_GAIN_9: return 9.0;
+    case LTR390_GAIN_18: return 18.0;
+    default: return 1.0;
+  }
+}
+
+int getLTRResolutionBits(ltr390_resolution_t res)
+{
+  switch (res)
+  {
+    case LTR390_RESOLUTION_20BIT: return 20;
+    case LTR390_RESOLUTION_19BIT: return 19;
+    case LTR390_RESOLUTION_18BIT: return 18;
+    case LTR390_RESOLUTION_17BIT: return 17;
+    case LTR390_RESOLUTION_16BIT: return 16;
+    case LTR390_RESOLUTION_13BIT: return 13;
+    default: return 16;
+  }
+}
+
+float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t res)
+{
+  // The raw UV count from the LTR390 already reflects the current gain.
+  // Use a simple conversion constant so higher gain raises the reported index.
+  const float UV_INDEX_SCALE = 23.0; // empirical calibration constant for your current setup
+  return raw / UV_INDEX_SCALE;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Data Processing                                                            */
 /* -------------------------------------------------------------------------- */
 
-String processData(SensorData data)
+String processData(const SensorData &data)
 {
   String out = "";
 
@@ -194,8 +229,15 @@ String processData(SensorData data)
   // LTR390
   if (!isnan(data.ltrALS) && !isnan(data.ltrUVS))
   {
-    out += "Light: " + String(data.ltrLux, 1) + " lux";
-    out += " | UV Index: " + String(data.ltrUVIndex, 1) + " (" + getUVCategory(data.ltrUVIndex) + ")";
+    // Compute lux from raw ALS counts using same formula used previously
+    float ltrLux = 0.6 * data.ltrALS / (3.0 * 1.0);
+
+    float ltrUVIndex = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
+
+    out += "Light: " + String(ltrLux, 1) + " lux";
+    out += " | UV Index: " + String(ltrUVIndex, 1) + " (" + getUVCategory(ltrUVIndex) + ")";
+
+    debugOutputSTR("Computed LTR UV: raw=" + String(data.ltrUVS) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " index=" + String(ltrUVIndex, 3));
   }
   else
   {
@@ -606,7 +648,7 @@ void setup()
 
 void updateSensors()
 {
-  SensorData data;
+  SensorData data = { NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN };
 
   // BMP280 (use initialized flag; don't call begin() repeatedly)
   if (bmpPresent)
@@ -659,7 +701,6 @@ void updateSensors()
     if (gotALS) {
       uint32_t alsRaw = ltr.readALS();
       data.ltrALS = alsRaw;
-      data.ltrLux = 0.6 * alsRaw / (3.0 * 1.0);
       infoOutput("LTR ALS raw: " + String(alsRaw));
     } else {
       data.ltrALS = NAN;
@@ -669,7 +710,7 @@ void updateSensors()
 
     // UVS (UV light)
     ltr.setMode(LTR390_MODE_UVS);
-    ltr.setGain(LTR390_GAIN_3);
+    ltr.setGain(LTR390_GAIN_18);
     ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
     infoOutput("LTR config before UVS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
@@ -685,7 +726,6 @@ void updateSensors()
     if (gotUV) {
       uint32_t uvRaw = ltr.readUVS();
       data.ltrUVS = uvRaw;
-      data.ltrUVIndex = uvRaw / 2300.0;
       infoOutput("LTR UVS raw: " + String(uvRaw));
     } else {
       data.ltrUVS = NAN;
