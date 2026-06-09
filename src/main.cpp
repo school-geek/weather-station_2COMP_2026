@@ -31,7 +31,7 @@ What does this program do?
 */
 
 // DEBUG MODE - set to true to enable debug output, false to disable
-bool DEBUG = true;
+bool DEBUG = false;
 
 // VERBOSE DEBUGING MDOE - set to true for more detailed debug output, false for concise output
 bool VERBOSE = false;
@@ -68,6 +68,9 @@ float tempSensorValue = 0;
 // Timing variable for debug output
 unsigned long lastPrint = 0;
 
+// last pressure value
+float lastPressure = NAN;
+
 struct SensorData
 {
   float bmpTemp;
@@ -84,6 +87,64 @@ struct SensorData
   // future sensors go here
   float extra1;
   float extra2;
+};
+
+struct WeatherModel
+{
+  float temp;
+  float humidity;
+  float light;
+  float pressure;
+  float pressureTrend;
+};
+
+/* Weather words */
+// Sky conditions
+const char* skyOptions[] = {
+  "Clear skies",
+  "Sunny",
+  "Mostly clear",
+  "Partly cloudy",
+  "Cloudy",
+  "Overcast"
+};
+
+// Temperature phrases
+const char* tempOptions[] = {
+  "very cold",
+  "cold",
+  "cool",
+  "mild",
+  "warm",
+  "hot",
+  "very hot"
+};
+
+// Humidity phrases
+const char* humidityOptions[] = {
+  "and very dry conditions",
+  "and dry conditions",
+  "and comfortable conditions",
+  "and humid conditions",
+  "and very humid conditions"
+};
+
+// Precipitation phrases
+const char* precipOptions[] = {
+  "with no precipitation expected",
+  "and dry conditions",
+  "with a few showers possible",
+  "with isolated showers",
+  "with occasional showers",
+  "with periods of rain"
+};
+
+// Pressure trend
+const char* pressureOptions[] = {
+  "Conditions are stable.",
+  "Conditions are improving.",
+  "Conditions are becoming unsettled.",
+  "Conditions are deteriorating."
 };
 
 /* GPIO pin definitions */
@@ -192,6 +253,73 @@ float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t re
   return raw / UV_INDEX_SCALE;
 }
 
+/* Weather condition helpers */
+
+const char* getSky(float lux)
+{
+  if (lux < 50) return "Overcast";
+  if (lux < 500) return "Cloudy";
+  if (lux < 3000) return "Partly cloudy";
+  return "Fine and sunny";
+}
+
+const char* getTemp(float t)
+{
+  if (t < 5) return "very cold";
+  if (t < 12) return "cold";
+  if (t < 18) return "cool";
+  if (t < 24) return "mild";
+  if (t < 30) return "warm";
+  if (t < 36) return "hot";
+  return "very hot";
+}
+
+const char* getHumidity(float h)
+{
+  if (h < 20) return "and very dry conditions";
+  if (h < 40) return "and dry conditions";
+  if (h < 60) return "and comfortable conditions";
+  if (h < 80) return "and humid conditions";
+  return "and very humid conditions";
+}
+
+const char* getPrecip(float h, float trend)
+{
+  if (trend < -2) return "with occasional showers";
+  if (trend < -1) return "with a few showers possible";
+  if (h < 40) return "with no precipitation expected";
+  return "and dry conditions";
+}
+
+int clampIndex(int i, int maxSize) {
+  if (i < 0) return 0;
+  if (i >= maxSize) return maxSize - 1;
+  return i;
+}
+
+WeatherModel buildWeatherModel(const SensorData &data)
+{
+  WeatherModel w;
+
+  w.temp = data.ahtTemp;
+  w.humidity = data.ahtHumidity;
+  w.light = data.ltrALS;
+  w.pressure = data.bmpPressure;
+
+  if (!isnan(lastPressure) && !isnan(w.pressure))
+  {
+    w.pressureTrend = w.pressure - lastPressure;
+  }
+  else
+  {
+    w.pressureTrend = 0;
+  }
+
+  lastPressure = w.pressure;
+
+  return w;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Data Processing                                                            */
 /* -------------------------------------------------------------------------- */
@@ -229,22 +357,52 @@ String processData(const SensorData &data)
   // LTR390
   if (!isnan(data.ltrALS) && !isnan(data.ltrUVS))
   {
-    // Compute lux from raw ALS counts using same formula used previously
     float ltrLux = 0.6 * data.ltrALS / (3.0 * 1.0);
-
     float ltrUVIndex = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
 
     out += "Light: " + String(ltrLux, 1) + " lux";
     out += " | UV Index: " + String(ltrUVIndex, 1) + " (" + getUVCategory(ltrUVIndex) + ")";
 
-    debugOutputSTR("Computed LTR UV: raw=" + String(data.ltrUVS) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " index=" + String(ltrUVIndex, 3));
+    debugOutputSTR(out);
   }
   else
   {
     out += "LTR390: invalid";
   }
 
-  debugOutputSTR(out);
+  /* ===================== METSERVICE ADDITION ===================== */
+
+  WeatherModel w = buildWeatherModel(data);
+
+  float ltrLux = 0.6 * data.ltrALS / (3.0 * 1.0);
+  String sky = getSky(ltrLux);
+
+  String temp = getTemp(w.temp);
+
+  String hum = getHumidity(w.humidity);
+
+  String precip = getPrecip(w.humidity, w.pressureTrend);
+
+  
+  String metServiceText = "";
+
+  int style = random(0, 3);
+
+  if (style == 0)
+  {
+    metServiceText = String(sky) + ", " + temp + " " + hum + " " + precip;
+  }
+  else if (style == 1)
+  {
+    metServiceText = String(sky) + " with " + temp + " conditions " + hum;
+  }
+  else
+  {
+    metServiceText = "Fine and sunny with " + String(temp) + " and " + hum;
+  }
+
+  out += " || MET: " + metServiceText;
+
   return out;
 }
 
@@ -550,7 +708,7 @@ void initLTR390()
     ltr.enable(true);
     // Print configuration for debugging
     String cfg = "LTR cfg - mode:" + String(ltr.getMode()) + " gain:" + String(ltr.getGain()) + " res:" + String(ltr.getResolution());
-    infoOutput(cfg);
+    debugOutputSTR(cfg);
   }
 }
 
@@ -588,7 +746,7 @@ void setup()
   initDisplay();
 
   /* Wi-Fi Access Point setup */
-  infoOutput("== WIFI SETUP START ==");
+  infoOutput("-- WIFI SETUP START --");
 
   WiFi.mode(WIFI_OFF);
   WiFi.disconnect(true, true);
@@ -688,7 +846,7 @@ void updateSensors()
     ltr.setGain(LTR390_GAIN_3);
     ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
-    infoOutput("LTR config before ALS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
+    debugOutputSTR("LTR config before ALS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
     delay(100);
 
     unsigned long start = millis();
@@ -701,11 +859,11 @@ void updateSensors()
     if (gotALS) {
       uint32_t alsRaw = ltr.readALS();
       data.ltrALS = alsRaw;
-      infoOutput("LTR ALS raw: " + String(alsRaw));
+      debugOutputSTR("LTR ALS raw: " + String(alsRaw));
     } else {
       data.ltrALS = NAN;
       data.ltrLux = NAN;
-      infoOutput("LTR ALS: no data");
+      debugOutputSTR("LTR ALS: no data");
     }
 
     // UVS (UV light)
@@ -713,7 +871,7 @@ void updateSensors()
     ltr.setGain(LTR390_GAIN_18);
     ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
-    infoOutput("LTR config before UVS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
+    debugOutputSTR("LTR config before UVS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
     delay(100);
 
     start = millis();
@@ -726,11 +884,11 @@ void updateSensors()
     if (gotUV) {
       uint32_t uvRaw = ltr.readUVS();
       data.ltrUVS = uvRaw;
-      infoOutput("LTR UVS raw: " + String(uvRaw));
+      debugOutputSTR("LTR UVS raw: " + String(uvRaw));
     } else {
       data.ltrUVS = NAN;
       data.ltrUVIndex = NAN;
-      infoOutput("LTR UVS: no data");
+      debugOutputSTR("LTR UVS: no data");
     }
   }
   else
