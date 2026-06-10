@@ -1,3 +1,4 @@
+// the main guy. Its him
 #include <Arduino.h>
 
 // display libraries
@@ -28,6 +29,17 @@ What does this program do?
 - Creates a Wi-Fi access point.
 - Hosts a web page that displays and updates a temperature value.
 - Displays status information on the built-in TFT screen.
+- Reads data from connected sensors (BMP280, AHT20, LTR390) and processes it into a weather forecast sentence.
+- Sends the weather forecast to connected clients via WebSockets.
+- Displays it to the TFT screen as well.
+- The weather forecast is generated based on the sensor data and includes sky conditions, 
+temperature description, humidity description, and precipitation likelihood.
+- Includes debug output that can be enabled or disabled with the DEBUG and VERBOSE flags.
+
+How does it work?
+1. The program initializes the TFT display and sets up the Wi-Fi access point.
+2. It initializes the sensors and checks if they are present.
+3. In the main loop, it reads data from the sensors, processes it into a weather forecast, and sends it to connected clients.
 */
 
 // DEBUG MODE - set to true to enable debug output, false to disable
@@ -55,9 +67,6 @@ Adafruit_AHTX0 aht;
 
 Adafruit_LTR390 ltr;
 
-// presence flags to avoid re-initializing sensors repeatedly
-bool bmpPresent = false;
-
 /* -------------------------------------------------------------------------- */
 /* Variables                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -70,6 +79,20 @@ unsigned long lastPrint = 0;
 
 // last pressure value
 float lastPressure = NAN;
+
+// presence flags to avoid re-initializing sensors repeatedly
+bool bmpPresent = false;
+
+// page state
+enum DisplayPage
+{
+  PAGE_HOME,
+  PAGE_FORECAST,
+  PAGE_DATA
+};
+
+// set page to home by default
+DisplayPage currentPage = PAGE_HOME;
 
 struct SensorData
 {
@@ -254,13 +277,12 @@ float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t re
 }
 
 /* Weather condition helpers */
-
 const char* getSky(float lux)
 {
   if (lux < 50) return "Overcast";
   if (lux < 500) return "Cloudy";
   if (lux < 3000) return "Partly cloudy";
-  return "Fine and sunny";
+  return "Sunny";
 }
 
 const char* getTemp(float t)
@@ -398,7 +420,7 @@ String processData(const SensorData &data)
   }
   else
   {
-    metServiceText = "Fine and sunny with " + String(temp) + " and " + hum;
+    metServiceText = "Sunny with " + String(temp) + " and " + hum;
   }
 
   out += " || MET: " + metServiceText;
@@ -632,26 +654,6 @@ void initDisplay()
     tft.fillScreen(ST77XX_BLUE);
     delay(500);
   }
-
-  tft.fillScreen(ST77XX_BLACK);
-
-  // Initial text
-  tft.setTextWrap(false);
-  tft.setCursor(10, 20);
-  tft.setTextColor(ST77XX_WHITE);
-  tft.setTextSize(2);
-  tft.println("Weather Station");
-
-  tft.setTextSize(1);
-  tft.setCursor(10, 50);
-
-  tft.setTextSize(2);
-  tft.setCursor(10, 80);
-  tft.setTextColor(ST77XX_CYAN);
-  tft.print(tempSensorValue);
-  tft.print(" C");
-
-  infoOutput("-- TFT READY --");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -661,10 +663,10 @@ void initDisplay()
 void initBMP280()
 {
   if (bmp.begin(0x76)) {
-    infoOutput("BMP280 found at 0x76.");
+    infoOutput("BMP280 found");
     bmpPresent = true;
   } else if (bmp.begin(0x77)) {
-    infoOutput("BMP280 found at 0x77.");
+    infoOutput("BMP280 found.");
     bmpPresent = true;
   } else {
     infoOutput("BMP280 not found.");
@@ -804,6 +806,120 @@ void setup()
   initLTR390();
 }
 
+void updateTFT(const SensorData &data)
+{
+  tft.fillScreen(ST77XX_BLACK);
+  
+  if (currentPage == PAGE_HOME)
+  {
+    // Show the normal home screen
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(3);
+    tft.setCursor(10, 10);
+    tft.println("Weather");
+
+    tft.setCursor(10, 40);
+    tft.println("Station");
+
+    tft.setTextSize(2);
+    tft.setCursor(10, 80);
+    tft.setTextColor(ST77XX_CYAN);
+    tft.print("IP: ");
+    tft.println(WiFi.softAPIP());
+
+    return;
+  }
+
+  if (currentPage == PAGE_FORECAST)
+  {
+    // Show ONLY the weather message
+    WeatherModel w = buildWeatherModel(data);
+
+    float lux = 0.6 * data.ltrALS / 3.0;
+
+    String met =
+      String(getSky(lux)) + ", " +
+      getTemp(w.temp) + " " +
+      getHumidity(w.humidity) + " " +
+      getPrecip(w.humidity, w.pressureTrend);
+
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(3);
+    tft.setCursor(10, 10);
+
+    tft.println("Forecast");
+
+    tft.setTextSize(2);
+    tft.setCursor(10, 60);
+    tft.setTextWrap(true);
+    tft.println(met);
+
+    return;   // Don't draw the normal screen
+  }
+
+  tft.setTextWrap(false);
+
+  // Header
+  tft.setCursor(10, 10);
+  tft.setTextSize(2);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.println("Sensor Data");
+
+  // ===== BMP =====
+  tft.setTextSize(1);
+  tft.setCursor(10, 40);
+  tft.setTextColor(ST77XX_CYAN);
+  tft.print("Temp & Pressure: ");
+
+  if (!isnan(data.bmpTemp))
+  {
+    tft.print(data.bmpTemp);
+    tft.print("C ");
+    tft.print(data.bmpPressure);
+    tft.print("hPa");
+  }
+  else tft.print("N/A");
+
+  // ===== AHT =====
+  tft.setCursor(10, 60);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.print("Temp2 & Humidity: ");
+
+  if (!isnan(data.ahtTemp))
+  {
+    tft.print(data.ahtTemp);
+    tft.print("C ");
+    tft.print(data.ahtHumidity);
+    tft.print("%");
+  }
+  else tft.print("N/A");
+
+  // ===== LIGHT =====
+  tft.setCursor(10, 80);
+  tft.setTextColor(ST77XX_YELLOW);
+
+  float lux = NAN;
+  if (!isnan(data.ltrALS))
+    lux = 0.6 * data.ltrALS / 3.0;
+
+  tft.print("Sky: ");
+  if (!isnan(lux))
+    tft.print(getSky(lux));
+  else
+    tft.print("N/A");
+
+  // ===== UV =====
+  tft.setCursor(10, 100);
+  tft.print("UV: ");
+
+  if (!isnan(data.ltrUVS))
+  {
+    float uv = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
+    tft.print(uv, 1);
+  }
+  else tft.print("N/A");
+}
+
 void updateSensors()
 {
   SensorData data = { NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN };
@@ -902,6 +1018,9 @@ void updateSensors()
   // Process everything
   String output = processData(data);
   sendToWebsite(output);
+
+  // Update TFT display (same sensor snapshot)
+  updateTFT(data);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -914,7 +1033,7 @@ void loop()
   server.handleClient();
   webSocket.loop();
 
-  if (millis() - lastPrint > 3000)
+  if (millis() - lastPrint > 10000)
   {
     lastPrint = millis();
     updateSensors();
@@ -943,18 +1062,19 @@ void loop()
   }
 
   // Button state logic
+
   if (D0_state == LOW)
   {
-    infoOutput("Button D0 pressed!");
+    currentPage = PAGE_HOME;
   }
-  
+
   if (D1_state == HIGH)
   {
-    infoOutput("Button D1 pressed!");
+    currentPage = PAGE_FORECAST;
   }
 
   if (D2_state == HIGH)
   {
-    infoOutput("Button D2 pressed!");
+    currentPage = PAGE_DATA;
   }
 }
