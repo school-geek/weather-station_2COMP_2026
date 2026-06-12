@@ -771,14 +771,6 @@ void setup()
   {
     debugOutputSTR("[ERROR] Failed to start AP");
   }
-  
-
-  // Update display with AP IP address
-  tft.setTextSize(1);
-  tft.setTextColor(ST77XX_YELLOW);
-  tft.setCursor(10, 120);
-  tft.print("AP IP: ");
-  tft.println(WiFi.softAPIP());
 
   // Web server routes
   server.on("/", handleRoot);
@@ -806,6 +798,64 @@ void setup()
   initLTR390();
 }
 
+// Display text with max X words and Y chars per line
+void displayFormattedMessage(String message, int startX, int startY, int lineHeight, int maxCharsPerLine, int maxWordsPerLine)
+{
+  // Split message into words
+  String words[50];
+  int wordCount = 0;
+  String currentWord = "";
+  
+  for (int i = 0; i < message.length(); i++)
+  {
+    if (message[i] == ' ')
+    {
+      if (currentWord.length() > 0)
+      {
+        words[wordCount++] = currentWord;
+        currentWord = "";
+      }
+    }
+    else
+    {
+      currentWord += message[i];
+    }
+  }
+  if (currentWord.length() > 0)
+    words[wordCount++] = currentWord;
+  
+  int currentY = startY;
+  int charsOnLine = 0;
+  int wordsOnLine = 0;
+  tft.setCursor(startX, currentY);
+  
+  for (int i = 0; i < wordCount; i++)
+  {
+    int wordLength = words[i].length();
+    int spaceNeeded = (wordsOnLine > 0) ? 1 : 0;  // space before word if not first
+    
+    // Check if we need to move to next line (hit word limit OR char limit)
+    if (wordsOnLine >= maxWordsPerLine || (charsOnLine + spaceNeeded + wordLength > maxCharsPerLine && wordsOnLine > 0))
+    {
+      currentY += lineHeight;
+      tft.setCursor(startX, currentY);
+      charsOnLine = 0;
+      wordsOnLine = 0;
+    }
+    
+    // Add space if not first word on line
+    if (wordsOnLine > 0)
+    {
+      tft.print(" ");
+      charsOnLine++;
+    }
+    
+    tft.print(words[i]);
+    charsOnLine += wordLength;
+    wordsOnLine++;
+  }
+}
+
 void updateTFT(const SensorData &data)
 {
   tft.fillScreen(ST77XX_BLACK);
@@ -830,7 +880,7 @@ void updateTFT(const SensorData &data)
     return;
   }
 
-  if (currentPage == PAGE_FORECAST)
+    if (currentPage == PAGE_FORECAST)
   {
     // Show ONLY the weather message
     WeatherModel w = buildWeatherModel(data);
@@ -844,32 +894,33 @@ void updateTFT(const SensorData &data)
       getPrecip(w.humidity, w.pressureTrend);
 
     tft.setTextColor(ST77XX_WHITE);
-    tft.setTextSize(3);
+    tft.setTextSize(2);
     tft.setCursor(10, 10);
-
     tft.println("Forecast");
 
-    tft.setTextSize(2);
-    tft.setCursor(10, 60);
-    tft.setTextWrap(true);
-    tft.println(met);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextWrap(false);
+    displayFormattedMessage(met, 10, 30, 25, 17, 3);  // x=10, y=40, lineHeight=25, maxCharsPerLine=17, maxWordsPerLine=3
 
     return;   // Don't draw the normal screen
   }
 
   tft.setTextWrap(false);
-
+/*
   // Header
   tft.setCursor(10, 10);
   tft.setTextSize(2);
   tft.setTextColor(ST77XX_WHITE);
   tft.println("Sensor Data");
+*/
 
   // ===== BMP =====
-  tft.setTextSize(1);
-  tft.setCursor(10, 40);
+  tft.setTextSize(2);
+  tft.setCursor(10, 10);
   tft.setTextColor(ST77XX_CYAN);
   tft.print("Temp & Pressure: ");
+
+  tft.setCursor(10, 30);
 
   if (!isnan(data.bmpTemp))
   {
@@ -881,10 +932,11 @@ void updateTFT(const SensorData &data)
   else tft.print("N/A");
 
   // ===== AHT =====
-  tft.setCursor(10, 60);
+  tft.setCursor(10, 50);
   tft.setTextColor(ST77XX_GREEN);
   tft.print("Temp2 & Humidity: ");
 
+  tft.setCursor(10, 70);
   if (!isnan(data.ahtTemp))
   {
     tft.print(data.ahtTemp);
@@ -895,21 +947,21 @@ void updateTFT(const SensorData &data)
   else tft.print("N/A");
 
   // ===== LIGHT =====
-  tft.setCursor(10, 80);
-  tft.setTextColor(ST77XX_YELLOW);
-
   float lux = NAN;
   if (!isnan(data.ltrALS))
     lux = 0.6 * data.ltrALS / 3.0;
 
+  tft.setCursor(10, 90);
+  tft.setTextColor(ST77XX_YELLOW);
   tft.print("Sky: ");
+
   if (!isnan(lux))
     tft.print(getSky(lux));
   else
     tft.print("N/A");
 
   // ===== UV =====
-  tft.setCursor(10, 100);
+  tft.setCursor(10, 110);
   tft.print("UV: ");
 
   if (!isnan(data.ltrUVS))
