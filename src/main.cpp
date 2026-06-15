@@ -145,11 +145,11 @@ const char* tempOptions[] = {
 
 // Humidity phrases
 const char* humidityOptions[] = {
-  "and very dry conditions",
-  "and dry conditions",
-  "and comfortable conditions",
-  "and humid conditions",
-  "and very humid conditions"
+  "and very dry",
+  "and dry",
+  "and comfortable",
+  "and humid",
+  "and very humid"
 };
 
 // Precipitation phrases
@@ -298,11 +298,11 @@ const char* getTemp(float t)
 
 const char* getHumidity(float h)
 {
-  if (h < 20) return "and very dry conditions";
-  if (h < 40) return "and dry conditions";
-  if (h < 60) return "and comfortable conditions";
-  if (h < 80) return "and humid conditions";
-  return "and very humid conditions";
+  if (h < 20) return "and very dry";
+  if (h < 40) return "and dry";
+  if (h < 60) return "and comfortable";
+  if (h < 80) return "and humid";
+  return "and very humid";
 }
 
 const char* getPrecip(float h, float trend)
@@ -747,6 +747,12 @@ void setup()
   /* Initialize the TFT display */
   initDisplay();
 
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(3);
+  tft.setCursor(20, 60);
+  tft.println("Starting...");
+
   /* Wi-Fi Access Point setup */
   infoOutput("-- WIFI SETUP START --");
 
@@ -872,10 +878,15 @@ void updateTFT(const SensorData &data)
     tft.println("Station");
 
     tft.setTextSize(2);
-    tft.setCursor(10, 80);
+    tft.setCursor(10, 70);
     tft.setTextColor(ST77XX_CYAN);
     tft.print("IP: ");
     tft.println(WiFi.softAPIP());
+
+    tft.setTextSize(2);
+    tft.setCursor(10, 110);
+    tft.setTextColor(ST77XX_GREEN);
+    tft.print("Made by Felix");
 
     return;
   }
@@ -900,7 +911,7 @@ void updateTFT(const SensorData &data)
 
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextWrap(false);
-    displayFormattedMessage(met, 10, 30, 25, 17, 3);  // x=10, y=40, lineHeight=25, maxCharsPerLine=17, maxWordsPerLine=3
+    displayFormattedMessage(met, 10, 30, 25, 20, 3);  // x=10, y=40, lineHeight=25, maxCharsPerLine=20, maxWordsPerLine=3
 
     return;   // Don't draw the normal screen
   }
@@ -1115,18 +1126,20 @@ void loop()
 
   // Button state logic
 
-  if (D0_state == LOW)
+  if (D0_state == LOW && currentPage != PAGE_HOME)
   {
     currentPage = PAGE_HOME;
   }
 
-  if (D1_state == HIGH)
+  if (D1_state == HIGH && currentPage != PAGE_FORECAST)
   {
     currentPage = PAGE_FORECAST;
+    updateSensors();  // Refresh display immediately when changing page
   }
 
-  if (D2_state == HIGH)
+  if (D2_state == HIGH && currentPage != PAGE_DATA)
   {
     currentPage = PAGE_DATA;
+    updateSensors();  // Refresh display immediately when changing page
   }
 }
