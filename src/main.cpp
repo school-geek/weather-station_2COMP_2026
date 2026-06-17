@@ -690,7 +690,7 @@ void initAHTX0()
  As well as the many hours, it also caused me physical pain in the form of electrical shocks 
  caused by the breadboard, which I will not forget until the day I die.
 
- int numberOfHoursSpentOnLTR390 = 5; 
+ int numberOfHoursSpentOnLTR390 = 6; 
  approximate, but only he who knows
 */
 
@@ -741,7 +741,7 @@ void scanI2C()
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial) {}
+//  while (!Serial) {}
   delay(1000);
 
   /* Initialize the TFT display */
