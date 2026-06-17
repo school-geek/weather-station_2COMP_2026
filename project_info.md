@@ -350,8 +350,8 @@ All core code is original work; AI was used as a development tool for optimizati
 
 ---
 
-## Files Structure
-
+## File Structure
+### My File Structure:
 ```
 Weather Station/
 ├── src/
@@ -362,9 +362,19 @@ Weather Station/
 ├── user_manual.md            # User guide (for end users)
 ├── project_info.md           # This file (project documentation)
 ├── README.md                 # Project overview
-├── test/                     # Test files and logs
+├── testing/                  # Test files and logs
 ├── versions.txt              # Version history
 └── temp_ltr390_ds.pdf        # LTR390 datasheet reference
+```
+
+### Minimum needed File Structure:
+```
+Weather Station/
+├── src/
+│   └── main.cpp              # Main program (1145 lines)
+├── include/                  # Header files
+├── lib/                      # Custom libraries
+└── platformio.ini            # PlatformIO configuration
 ```
 
 ---
