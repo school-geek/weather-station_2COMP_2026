@@ -62,9 +62,14 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 // websocket server
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+/* sensor objects */
+// BMP280 for temperature and pressure
 Adafruit_BMP280 bmp;
+
+// AHT20 for temperature and humidity
 Adafruit_AHTX0 aht;
 
+// LTR390 for light and UV
 Adafruit_LTR390 ltr;
 
 /* -------------------------------------------------------------------------- */
@@ -83,6 +88,8 @@ float lastPressure = NAN;
 // presence flags to avoid re-initializing sensors repeatedly
 bool bmpPresent = false;
 
+const int sensorUpdateInterval = 10000; // update every 10 seconds
+
 // page state
 enum DisplayPage
 {
@@ -94,6 +101,7 @@ enum DisplayPage
 // set page to home by default
 DisplayPage currentPage = PAGE_HOME;
 
+// struct to hold all sensor data in one place for easy passing around
 struct SensorData
 {
   float bmpTemp;
@@ -112,6 +120,7 @@ struct SensorData
   float extra2;
 };
 
+// weather model struct to hold processed weather information for the "metservice" style forecast generation
 struct WeatherModel
 {
   float temp;
@@ -182,6 +191,7 @@ const int SCL_PIN = 4;
 /* Debug / Info Functions                                                     */
 /* -------------------------------------------------------------------------- */
 
+// Debug output function for string messages, with a [DEBUG] prefix for clarity
 void debugOutputSTR(String data)
 {
   if (!DEBUG) return;
@@ -189,6 +199,7 @@ void debugOutputSTR(String data)
   Serial.println(data);
 }
 
+// Debug output function for integer values, with a sensor name for context
 void debugOutputINT(String sensor, int data)
 {
   if (!DEBUG) return;
@@ -214,6 +225,7 @@ String getUVCategory(float uvIndex)
   }
 }
 
+// Reads analog sensor data from a specified pin and optionally outputs debug information.
 int anaReadSensorData(String sensor, byte pin_var)
 {
   int sensorValue = analogRead(pin_var);
@@ -224,6 +236,7 @@ int anaReadSensorData(String sensor, byte pin_var)
   return sensorValue;
 }
 
+// digital read version of the above function, for sensors that output digital signals instead of analog voltages
 int digiReadSensorData(String sensor, byte pin_var)
 {
   int sensorValue = digitalRead(pin_var);
@@ -234,13 +247,14 @@ int digiReadSensorData(String sensor, byte pin_var)
   return sensorValue;
 }
 
-
+// simple info output function for important messages that should always be printed, even if debug mode is off
 void infoOutput(String str)
 {
   Serial.print("[INFO] ");
   Serial.println(str);
 }
 
+// Helper function to convert LTR390 gain enum to actual gain factor for calculations
 float getLTRGainFactor(ltr390_gain_t gain)
 {
   switch (gain)
@@ -254,6 +268,7 @@ float getLTRGainFactor(ltr390_gain_t gain)
   }
 }
 
+// Helper function to convert LTR390 resolution enum to actual bit depth for calculations
 int getLTRResolutionBits(ltr390_resolution_t res)
 {
   switch (res)
@@ -268,6 +283,7 @@ int getLTRResolutionBits(ltr390_resolution_t res)
   }
 }
 
+// Converts raw LTR390 UV sensor data to a UV index value, taking into account the current gain and resolution settings of the sensor.
 float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t res)
 {
   // The raw UV count from the LTR390 already reflects the current gain.
@@ -277,6 +293,7 @@ float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t re
 }
 
 /* Weather condition helpers */
+// Sky condition based on light level (lux)
 const char* getSky(float lux)
 {
   if (lux < 50) return "Overcast";
@@ -285,6 +302,7 @@ const char* getSky(float lux)
   return "Sunny";
 }
 
+// Temperature description based on Celsius value
 const char* getTemp(float t)
 {
   if (t < 5) return "very cold";
@@ -296,6 +314,7 @@ const char* getTemp(float t)
   return "very hot";
 }
 
+// Humidity description based on percentage
 const char* getHumidity(float h)
 {
   if (h < 20) return "and very dry";
@@ -305,6 +324,7 @@ const char* getHumidity(float h)
   return "and very humid";
 }
 
+// Precipitation likelihood based on humidity and pressure trend
 const char* getPrecip(float h, float trend)
 {
   if (trend < -2) return "with occasional showers";
@@ -313,12 +333,14 @@ const char* getPrecip(float h, float trend)
   return "and dry conditions";
 }
 
+// Helper function to clamp an index within array bounds
 int clampIndex(int i, int maxSize) {
   if (i < 0) return 0;
   if (i >= maxSize) return maxSize - 1;
   return i;
 }
 
+// Builds a simple weather model struct from the raw sensor data, including a pressure trend calculation.
 WeatherModel buildWeatherModel(const SensorData &data)
 {
   WeatherModel w;
@@ -346,6 +368,10 @@ WeatherModel buildWeatherModel(const SensorData &data)
 /* Data Processing                                                            */
 /* -------------------------------------------------------------------------- */
 
+// Processes raw sensor data into a formatted weather forecast string.
+/*
+This function takes the raw sensor data, checks for validity, and constructs a human-readable weather forecast string.
+*/
 String processData(const SensorData &data)
 {
   String out = "";
@@ -392,7 +418,7 @@ String processData(const SensorData &data)
     out += "LTR390: invalid";
   }
 
-  /* ===================== METSERVICE ADDITION ===================== */
+  /* ===================== "METSERVICE" ADDITION ===================== */
 
   WeatherModel w = buildWeatherModel(data);
 
@@ -433,6 +459,10 @@ String processData(const SensorData &data)
 /* -------------------------------------------------------------------------- */
 
 // WebSocket Event Handler
+/*
+This function is called whenever a WebSocket event occurs (e.g., a client connects, disconnects, or sends a message).
+It checks the type of event and processes incoming text messages that start with "command:".
+*/
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
   if (type == WStype_TEXT)
@@ -502,6 +532,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 // WebSocket data sending
+/*
+This just sends alll data passed into the function to all connected WebSocket clients.
+It also prints the data to the serial console if debug mode is enabled.
+*/
 void sendToWebsite(String data)
 {
   if (DEBUG)
@@ -512,6 +546,14 @@ void sendToWebsite(String data)
   webSocket.broadcastTXT(data);
 }
 
+// HTTP handler for root page + Web page content
+/*
+This function serves the main web page when a client connects to the root URL ("/").
+It constructs an HTML page with embedded CSS and JavaScript.
+The page displays live sensor data and includes an input field for sending commands back to
+ the server via WebSockets. The JavaScript code establishes a WebSocket connection to receive
+ real-time updates and send user commands to the server.
+*/
 WebServer server(80);
 void handleRoot()
 {
@@ -622,6 +664,13 @@ connectWS();
 /* TFT Display Initialization                                                 */
 /* -------------------------------------------------------------------------- */
 
+// Initializes the TFT display, sets rotation, and performs a quick color test if debug mode is enabled.
+/*
+This function is responsible for setting up the TFT display. It powers on the display,
+ initializes it with the correct dimensions, and sets the orientation.
+If debug mode is enabled, it also performs a quick color test by filling the screen with red, green,
+ and blue colors sequentially to verify that the display is working correctly.
+*/
 void initDisplay()
 {
   debugOutputSTR("== TFT DISPLAY SETUP ==");
@@ -660,6 +709,7 @@ void initDisplay()
 /* Sensor Initialization                                                      */
 /* -------------------------------------------------------------------------- */
 
+// Initializes the BMP280 sensor and checks if it is present on the I2C bus.
 void initBMP280()
 {
   if (bmp.begin(0x76)) {
@@ -674,6 +724,7 @@ void initBMP280()
   }
 }
 
+// Initializes the AHT20 sensor and checks if it is present on the I2C bus.
 void initAHTX0()
 {
   if (aht.begin()) {
@@ -682,6 +733,12 @@ void initAHTX0()
     infoOutput("[ERROR] AHT20 not found.");
   }
 }
+
+// Initializes the LTR390 sensor with specific settings for gain, resolution, and thresholds.
+/*
+This function attempts to initialize the LTR390 sensor and configures it for UV sensing mode.
+It sets a moderate gain and resolution for quicker readings, and defines thresholds for light and UV levels
+*/
 
 /* 
  Here lies many hours of my life trying to get the LTR390 working, so I hope you appreciate
@@ -693,7 +750,6 @@ void initAHTX0()
  int numberOfHoursSpentOnLTR390 = 6; 
  approximate, but only he who knows
 */
-
 void initLTR390()
 {
   if (!ltr.begin()) {
@@ -715,6 +771,11 @@ void initLTR390()
 }
 
 // Quick I2C scanner to help debug wiring/address issues
+/*
+This function scans the I2C bus for connected devices and prints their addresses to the serial monitor.
+It iterates through all possible I2C addresses (1 to 126) and attempts to communicate with each one.
+If a device responds, its address is printed in hexadecimal format.
+*/
 void scanI2C()
 {
   infoOutput("Scanning I2C bus...");
@@ -740,6 +801,7 @@ void scanI2C()
 
 void setup()
 {
+  /* Initialize serial communication */
   Serial.begin(115200);
 //  while (!Serial) {}
   delay(1000);
@@ -799,12 +861,20 @@ void setup()
     scanI2C();
   }
 
+  /* Sensor initialization */
   initBMP280();
   initAHTX0();
   initLTR390();
 }
 
 // Display text with max X words and Y chars per line
+/*
+This function takes a long message and formats it to fit within specified character
+ and word limits per line on the TFT display.
+It splits the message into words and builds lines while ensuring that neither the
+ character limit nor the word limit is exceeded. 
+It then prints each line to the display with proper spacing.
+*/
 void displayFormattedMessage(String message, int startX, int startY, int lineHeight, int maxCharsPerLine, int maxWordsPerLine)
 {
   // Split message into words
@@ -862,6 +932,14 @@ void displayFormattedMessage(String message, int startX, int startY, int lineHei
   }
 }
 
+// Update the TFT display with sensor data and forecast
+/*
+This function takes the latest sensor data, processes it into a weather forecast,
+ and updates the TFT display accordingly. 
+It handles different display pages (home screen, forecast screen) and formats the output for readability. 
+The home screen shows basic info and the forecast screen shows a detailed weather
+ message based on the sensor readings.
+*/
 void updateTFT(const SensorData &data)
 {
   tft.fillScreen(ST77XX_BLACK);
@@ -888,7 +966,7 @@ void updateTFT(const SensorData &data)
     tft.setTextColor(ST77XX_GREEN);
     tft.print("Made by Felix");
 
-    return;
+    return;   // Don't draw the normal screen
   }
 
     if (currentPage == PAGE_FORECAST)
@@ -983,6 +1061,14 @@ void updateTFT(const SensorData &data)
   else tft.print("N/A");
 }
 
+// Reads sensors, processes data, sends to website, and updates TFT display
+/*
+This function performs the following steps:
+1. Reads data from the BMP280, AHT20, and LTR390 sensors.
+2. Processes the raw sensor data into a formatted string (including a weather forecast).
+3. Sends the formatted data to connected WebSocket clients.
+4. Updates the TFT display with the latest sensor data and forecast.
+*/
 void updateSensors()
 {
   SensorData data = { NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN };
@@ -1093,38 +1179,68 @@ void updateSensors()
 void loop()
 {
   // web server and websocket handling
+  /* 
+  Updates the web server and WebSocket connections. 
+  This is necessary to keep the server responsive and to handle incoming messages from clients.
+  */
   server.handleClient();
   webSocket.loop();
 
-  if (millis() - lastPrint > 10000)
+  // Sensor reading and processing every 10 seconds
+  /*
+  Every 10 seconds, the program reads data from the sensors, processes it 
+   into a weather forecast, and sends it to connected clients.
+  */
+  if (millis() - lastPrint > sensorUpdateInterval)
   {
     lastPrint = millis();
     updateSensors();
   }
+
+
+  // Serial input handling for debug commands
+  /*
+  This allows you to type commands into the Serial Monitor to trigger actions in the program.
+  For example, typing "update" will call updateSensors() immediately, and typing 
+  "send" followed by a message will send that message to all connected WebSocket clients.
+
+  It only runs with DEBUG mode enabled, and it has access to Serial monitor
+  */
+  if (Serial.available() && DEBUG)
+  {
+    debugOutputSTR("Serial input detected");
   
-  byte D0_state = digiReadSensorData("D0", BUTTON_D0);
-  byte D1_state = digiReadSensorData("D1", BUTTON_D1);
-  byte D2_state = digiReadSensorData("D2", BUTTON_D2);
+  
+    String serialInput = Serial.readString();
+    if(serialInput == "update")
+    {
+      updateSensors();
+    }
+  
+    else if (serialInput.startsWith("send "))
+    {
+      // Extract everything after "send "
+      String dataToSend = serialInput.substring(5);
 
-  String serialInput = Serial.readString();
-  if(serialInput == "update")
-  {
-    updateSensors();
-  }
-  else if (serialInput.startsWith("send "))
-  {
-    // Extract everything after "send "
-    String dataToSend = serialInput.substring(5);
+      // Send the extracted data to the website
+      sendToWebsite(dataToSend);
 
-    // Send the extracted data to the website
-    sendToWebsite(dataToSend);
-
-    // Optional confirmation in Serial Monitor
-    infoOutput("Sent to website: ");
-    infoOutput(dataToSend);
+      // Optional confirmation in Serial Monitor
+      infoOutput("Sent to website: ");
+      infoOutput(dataToSend);
+    }
   }
 
   // Button state logic
+  /* 
+  This is where the page switching logic happens. 
+  It reads the state of the buttons and updates the currentPage variable accordingly. 
+  When a button is pressed, it also calls updateSensors()
+   to refresh the display immediately with the new page's content.
+  */
+  byte D0_state = digiReadSensorData("D0", BUTTON_D0);
+  byte D1_state = digiReadSensorData("D1", BUTTON_D1);
+  byte D2_state = digiReadSensorData("D2", BUTTON_D2);
 
   if (D0_state == LOW && currentPage != PAGE_HOME)
   {
