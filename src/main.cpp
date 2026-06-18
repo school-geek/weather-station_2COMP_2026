@@ -94,6 +94,11 @@ const int newDataInterval = 1500; // new data every 1.5 seconds
 
 const int formatMessageOptions[] = {10, 30, 25, 20, 3}; // options for the displayFormattedMessage function: x=10, y=30, lineHeight=25, maxCharsPerLine=20, maxWordsPerLine=3
 
+const int smallDelay = 100; // small delay in milliseconds to prevent overwhelming the display with updates
+const int mediumDelay = 500; // medium delay in milliseconds for more significant updates
+const int longDelay = 1000; // long delay in milliseconds for major updates or to give users time to read the display
+const int veryLongDelay = 2000; // very long delay in milliseconds for critical updates or to allow users to fully absorb important information
+
 // page state
 enum DisplayPage
 {
@@ -713,7 +718,7 @@ void initDisplay()
   // Enable power to the TFT and STEMMA/Qwiic circuitry
   pinMode(TFT_I2C_POWER, OUTPUT);
   digitalWrite(TFT_I2C_POWER, HIGH);
-  delay(100);
+  delay(smallDelay);
 
   // Enable the backlight
   pinMode(TFT_BACKLITE, OUTPUT);
@@ -732,11 +737,11 @@ void initDisplay()
 
     // Quick color test
     tft.fillScreen(ST77XX_RED);
-    delay(500);
+    delay(mediumDelay);
     tft.fillScreen(ST77XX_GREEN);
-    delay(500);
+    delay(mediumDelay);
     tft.fillScreen(ST77XX_BLUE);
-    delay(500);
+    delay(mediumDelay);
   }
 }
 
@@ -839,7 +844,7 @@ void setup()
   /* Initialize serial communication */
   Serial.begin(115200);
 //  while (!Serial) {}
-  delay(1000);
+  delay(longDelay);
 
   /* Initialize the TFT display */
   initDisplay();
@@ -855,10 +860,10 @@ void setup()
 
   WiFi.mode(WIFI_OFF);
   WiFi.disconnect(true, true);
-  delay(1500);
+  delay(veryLongDelay);
 
   WiFi.mode(WIFI_AP);
-  delay(1000);
+  delay(longDelay);
 
   bool ok = WiFi.softAP(SSID, PASSWORD, 6, 0, 4);
 
@@ -889,7 +894,7 @@ void setup()
   pinMode(BUTTON_D2, INPUT_PULLDOWN);
 
   Wire.begin(SDA_PIN, SCL_PIN);
-  delay(100);
+  delay(smallDelay);
   
   if(DEBUG){
     // show I2C devices to help debug wiring/address issues
@@ -1140,14 +1145,14 @@ void updateSensors()
     ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
     debugOutputSTR("LTR config before ALS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
-    delay(100);
+    delay(smallDelay);
 
     unsigned long start = millis();
     bool gotALS = false;
 
     while (millis() - start < newDataInterval) {
       if (ltr.newDataAvailable()) { gotALS = true; break; }
-      delay(25);
+      delay(smallDelay);
     }
     if (gotALS) {
       uint32_t alsRaw = ltr.readALS();
@@ -1165,14 +1170,14 @@ void updateSensors()
     ltr.setResolution(LTR390_RESOLUTION_16BIT);
     ltr.enable(true);
     debugOutputSTR("LTR config before UVS: mode=" + String(ltr.getMode()) + " gain=" + String(ltr.getGain()) + " res=" + String(ltr.getResolution()) + " enabled=" + String(ltr.enabled()));
-    delay(100);
+    delay(smallDelay);
 
     start = millis();
     bool gotUV = false;
 
     while (millis() - start < newDataInterval) {
       if (ltr.newDataAvailable()) { gotUV = true; break; }
-      delay(25);
+      delay(smallDelay);
     }
     if (gotUV) {
       uint32_t uvRaw = ltr.readUVS();
