@@ -90,6 +90,10 @@ bool bmpPresent = false;
 
 const int sensorUpdateInterval = 10000; // update every 10 seconds
 
+const int newDataInterval = 1500; // new data every 1.5 seconds
+
+const int formatMessageOptions[] = {10, 30, 25, 20, 3}; // options for the displayFormattedMessage function: x=10, y=30, lineHeight=25, maxCharsPerLine=20, maxWordsPerLine=3
+
 // page state
 enum DisplayPage
 {
@@ -362,6 +366,37 @@ WeatherModel buildWeatherModel(const SensorData &data)
   lastPressure = w.pressure;
 
   return w;
+}
+
+String buildTFTForecastMessage(const SensorData &data, const WeatherModel &w)
+{
+  const float lux = 0.6f * data.ltrALS / (3.0f * 1.0f);
+  const float uvIndex = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
+
+  const char* sky = getSky(lux);
+  const char* temp = getTemp(w.temp);
+  const char* hum = getHumidity(w.humidity);
+  const char* precip = getPrecip(w.humidity, w.pressureTrend);
+
+  const int styleIndex = clampIndex(random(0, 4), 3);
+  const String skyText = String(sky);
+  const String tempText = String(temp);
+  const String humText = String(hum);
+  const String precipText = String(precip);
+  const String uvCategory = getUVCategory(uvIndex);
+
+  if (styleIndex == 0)
+  {
+    return skyText + ", " + tempText + " " + humText + " " + precipText;
+  }
+  else if (styleIndex == 1)
+  {
+    return skyText + " with " + tempText + " conditions " + humText;
+  }
+  else
+  {
+    return skyText + " (" + uvCategory + ") with " + tempText + " and " + humText;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -973,14 +1008,7 @@ void updateTFT(const SensorData &data)
   {
     // Show ONLY the weather message
     WeatherModel w = buildWeatherModel(data);
-
-    float lux = 0.6 * data.ltrALS / 3.0;
-
-    String met =
-      String(getSky(lux)) + ", " +
-      getTemp(w.temp) + " " +
-      getHumidity(w.humidity) + " " +
-      getPrecip(w.humidity, w.pressureTrend);
+    const String met = buildTFTForecastMessage(data, w);
 
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(2);
@@ -989,7 +1017,7 @@ void updateTFT(const SensorData &data)
 
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextWrap(false);
-    displayFormattedMessage(met, 10, 30, 25, 20, 3);  // x=10, y=40, lineHeight=25, maxCharsPerLine=20, maxWordsPerLine=3
+    displayFormattedMessage(met, formatMessageOptions[0], formatMessageOptions[1], formatMessageOptions[2], formatMessageOptions[3], formatMessageOptions[4]);
 
     return;   // Don't draw the normal screen
   }
@@ -1117,7 +1145,7 @@ void updateSensors()
     unsigned long start = millis();
     bool gotALS = false;
 
-    while (millis() - start < 1500) {
+    while (millis() - start < newDataInterval) {
       if (ltr.newDataAvailable()) { gotALS = true; break; }
       delay(25);
     }
@@ -1142,7 +1170,7 @@ void updateSensors()
     start = millis();
     bool gotUV = false;
 
-    while (millis() - start < 1500) {
+    while (millis() - start < newDataInterval) {
       if (ltr.newDataAvailable()) { gotUV = true; break; }
       delay(25);
     }
@@ -1172,6 +1200,75 @@ void updateSensors()
   updateTFT(data);
 }
 
+// Serial input handling for debug commands
+/*
+This allows you to type commands into the Serial Monitor to trigger actions in the program.
+For example, typing "update" will call updateSensors() immediately, and typing
+ "send" followed by a message will send that message to all connected WebSocket clients.
+
+It only runs with DEBUG mode enabled, and it has access to Serial monitor
+*/
+void handleCommands()
+{
+  if (!Serial.available() && !DEBUG)
+  {
+    infoOutput("Serial input available, but DEBUG mode is off so ignoring...");
+  }
+  else{
+    debugOutputSTR("Serial input detected");
+  
+    String serialInput = Serial.readString();
+    if(serialInput == "update")
+    {
+      updateSensors();
+    }
+  
+    else if (serialInput.startsWith("send "))
+    {
+      // Extract everything after "send "
+      String dataToSend = serialInput.substring(5);
+
+      // Send the extracted data to the website
+      sendToWebsite(dataToSend);
+
+      // Optional confirmation in Serial Monitor
+      infoOutput("Sent to website: ");
+      infoOutput(dataToSend);
+    }
+  }
+}
+
+// Button state logic
+/* 
+This is where the page switching logic happens. 
+It reads the state of the buttons and updates the currentPage variable accordingly. 
+When a button is pressed, it also calls updateSensors()
+ to refresh the display immediately with the new page's content.
+*/
+void handleButtons()
+{
+  byte D0_state = digiReadSensorData("D0", BUTTON_D0);
+  byte D1_state = digiReadSensorData("D1", BUTTON_D1);
+  byte D2_state = digiReadSensorData("D2", BUTTON_D2);
+
+  if (D0_state == LOW && currentPage != PAGE_HOME)
+  {
+    currentPage = PAGE_HOME;
+  }
+
+  if (D1_state == HIGH && currentPage != PAGE_FORECAST)
+  {
+    currentPage = PAGE_FORECAST;
+    updateSensors();  // Refresh display immediately when changing page
+  }
+
+  if (D2_state == HIGH && currentPage != PAGE_DATA)
+  {
+    currentPage = PAGE_DATA;
+    updateSensors();  // Refresh display immediately when changing page
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Main Loop                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -1199,63 +1296,8 @@ void loop()
 
 
   // Serial input handling for debug commands
-  /*
-  This allows you to type commands into the Serial Monitor to trigger actions in the program.
-  For example, typing "update" will call updateSensors() immediately, and typing 
-  "send" followed by a message will send that message to all connected WebSocket clients.
+  handleCommands();
 
-  It only runs with DEBUG mode enabled, and it has access to Serial monitor
-  */
-  if (Serial.available() && DEBUG)
-  {
-    debugOutputSTR("Serial input detected");
-  
-  
-    String serialInput = Serial.readString();
-    if(serialInput == "update")
-    {
-      updateSensors();
-    }
-  
-    else if (serialInput.startsWith("send "))
-    {
-      // Extract everything after "send "
-      String dataToSend = serialInput.substring(5);
-
-      // Send the extracted data to the website
-      sendToWebsite(dataToSend);
-
-      // Optional confirmation in Serial Monitor
-      infoOutput("Sent to website: ");
-      infoOutput(dataToSend);
-    }
-  }
-
-  // Button state logic
-  /* 
-  This is where the page switching logic happens. 
-  It reads the state of the buttons and updates the currentPage variable accordingly. 
-  When a button is pressed, it also calls updateSensors()
-   to refresh the display immediately with the new page's content.
-  */
-  byte D0_state = digiReadSensorData("D0", BUTTON_D0);
-  byte D1_state = digiReadSensorData("D1", BUTTON_D1);
-  byte D2_state = digiReadSensorData("D2", BUTTON_D2);
-
-  if (D0_state == LOW && currentPage != PAGE_HOME)
-  {
-    currentPage = PAGE_HOME;
-  }
-
-  if (D1_state == HIGH && currentPage != PAGE_FORECAST)
-  {
-    currentPage = PAGE_FORECAST;
-    updateSensors();  // Refresh display immediately when changing page
-  }
-
-  if (D2_state == HIGH && currentPage != PAGE_DATA)
-  {
-    currentPage = PAGE_DATA;
-    updateSensors();  // Refresh display immediately when changing page
-  }
+  // Button state handling for page switching
+  handleButtons();
 }
