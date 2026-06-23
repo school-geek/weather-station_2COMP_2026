@@ -99,6 +99,13 @@ const int mediumDelay = 500; // medium delay in milliseconds for more significan
 const int longDelay = 1000; // long delay in milliseconds for major updates or to give users time to read the display
 const int veryLongDelay = 2000; // very long delay in milliseconds for critical updates or to allow users to fully absorb important information
 
+struct startOfTFT {
+  int x;
+  int y;
+};
+
+const startOfTFT tftStart = {10, 10}; // starting position for text on the TFT display
+
 // page state
 enum DisplayPage
 {
@@ -852,7 +859,7 @@ void setup()
   tft.fillScreen(ST77XX_BLACK);
   tft.setTextColor(ST77XX_WHITE);
   tft.setTextSize(3);
-  tft.setCursor(20, 60);
+  tft.setCursor(tftStart.x + 10, tftStart.y + 40);
   tft.println("Starting...");
 
   /* Wi-Fi Access Point setup */
@@ -989,20 +996,14 @@ void updateTFT(const SensorData &data)
     // Show the normal home screen
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(3);
-    tft.setCursor(10, 10);
+    tft.setCursor(tftStart.x, tftStart.y);
     tft.println("Weather");
 
-    tft.setCursor(10, 40);
+    tft.setCursor(tftStart.x, tftStart.y + 30);
     tft.println("Station");
 
     tft.setTextSize(2);
-    tft.setCursor(10, 70);
-    tft.setTextColor(ST77XX_CYAN);
-    tft.print("IP: ");
-    tft.println(WiFi.softAPIP());
-
-    tft.setTextSize(2);
-    tft.setCursor(10, 110);
+    tft.setCursor(tftStart.x, tftStart.y + 90);
     tft.setTextColor(ST77XX_GREEN);
     tft.print("Made by Felix");
 
@@ -1017,7 +1018,7 @@ void updateTFT(const SensorData &data)
 
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(2);
-    tft.setCursor(10, 10);
+    tft.setCursor(tftStart.x, tftStart.y);
     tft.println("Forecast");
 
     tft.setTextColor(ST77XX_WHITE);
@@ -1038,11 +1039,11 @@ void updateTFT(const SensorData &data)
 
   // ===== BMP =====
   tft.setTextSize(2);
-  tft.setCursor(10, 10);
+  tft.setCursor(tftStart.x, tftStart.y);
   tft.setTextColor(ST77XX_CYAN);
   tft.print("Temp & Pressure: ");
 
-  tft.setCursor(10, 30);
+  tft.setCursor(tftStart.x, tftStart.y + 20);
 
   if (!isnan(data.bmpTemp))
   {
@@ -1054,11 +1055,11 @@ void updateTFT(const SensorData &data)
   else tft.print("N/A");
 
   // ===== AHT =====
-  tft.setCursor(10, 50);
+  tft.setCursor(tftStart.x, tftStart.y + 40);
   tft.setTextColor(ST77XX_GREEN);
   tft.print("Temp2 & Humidity: ");
 
-  tft.setCursor(10, 70);
+  tft.setCursor(tftStart.x, tftStart.y + 60);
   if (!isnan(data.ahtTemp))
   {
     tft.print(data.ahtTemp);
@@ -1073,7 +1074,7 @@ void updateTFT(const SensorData &data)
   if (!isnan(data.ltrALS))
     lux = 0.6 * data.ltrALS / 3.0;
 
-  tft.setCursor(10, 90);
+  tft.setCursor(tftStart.x, tftStart.y + 80);
   tft.setTextColor(ST77XX_YELLOW);
   tft.print("Sky: ");
 
@@ -1083,7 +1084,7 @@ void updateTFT(const SensorData &data)
     tft.print("N/A");
 
   // ===== UV =====
-  tft.setCursor(10, 110);
+  tft.setCursor(tftStart.x, tftStart.y + 100);
   tft.print("UV: ");
 
   if (!isnan(data.ltrUVS))
@@ -1259,6 +1260,7 @@ void handleButtons()
   if (D0_state == LOW && currentPage != PAGE_HOME)
   {
     currentPage = PAGE_HOME;
+    updateSensors();  // Refresh display immediately when changing page
   }
 
   if (D1_state == HIGH && currentPage != PAGE_FORECAST)
