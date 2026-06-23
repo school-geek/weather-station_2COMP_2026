@@ -195,6 +195,37 @@ const char* pressureOptions[] = {
   "Conditions are deteriorating."
 };
 
+/* Weather thresholds */
+// UV index categories based on standard UV index scale
+const int UV_CAT_THRESHOLD_LOW = 3;
+const int UV_CAT_THRESHOLD_MODERATE = 6;
+const int UV_CAT_THRESHOLD_HIGH = 8;
+const int UV_CAT_THRESHOLD_VERY_HIGH = 11;
+
+// light level thresholds for sky conditions (in lux, approximate values for outdoor conditions)
+const int SKY_THRESHOLD_OVERCAST = 50;
+const int SKY_THRESHOLD_CLOUDY = 500;
+const int SKY_THRESHOLD_PARTLY_CLOUDY = 3000;
+
+// temperature thresholds in Celsius for descriptive words
+const int TEMP_THRESHOLD_VERY_COLD = 5;
+const int TEMP_THRESHOLD_COLD = 12;
+const int TEMP_THRESHOLD_COOL = 18;
+const int TEMP_THRESHOLD_MILD = 21;
+const int TEMP_THRESHOLD_WARM = 24;
+const int TEMP_THRESHOLD_HOT = 26;
+
+// humidity thresholds in percentage for descriptive words
+const int HUMIDITY_THRESHOLD_VERY_DRY = 20;
+const int HUMIDITY_THRESHOLD_DRY = 40;
+const int HUMIDITY_THRESHOLD_COMFORTABLE = 60;
+const int HUMIDITY_THRESHOLD_HUMID = 80;
+
+// pressure trend thresholds in hPa for precipitation likelihood
+const int PRECIP_TREND_THRESHOLD_SHOWERS = -2;
+const int PRECIP_TREND_THRESHOLD_SHOWERS_POSSIBLE = -1;
+const int PRECIP_HUMIDITY_THRESHOLD_DRY = 40;
+
 /* GPIO pin definitions */
 const int BUTTON_D0 = 0;
 const int BUTTON_D1 = 1;
@@ -223,22 +254,6 @@ void debugOutputINT(String sensor, int data)
   Serial.print(sensor);
   Serial.print(": ");
   Serial.println(data);
-}
-
-// Helper function to categorize UV Index
-String getUVCategory(float uvIndex)
-{
-  if (uvIndex < 3) {
-    return "Low";
-  } else if (uvIndex < 6) {
-    return "Moderate";
-  } else if (uvIndex < 8) {
-    return "High";
-  } else if (uvIndex < 11) {
-    return "Very High";
-  } else {
-    return "Extreme";
-  }
 }
 
 // Reads analog sensor data from a specified pin and optionally outputs debug information.
@@ -299,6 +314,22 @@ int getLTRResolutionBits(ltr390_resolution_t res)
   }
 }
 
+// Helper function to categorize UV Index
+String getUVCategory(float uvIndex)
+{
+  if (uvIndex < UV_CAT_THRESHOLD_LOW) {
+    return "Low";
+  } else if (uvIndex < UV_CAT_THRESHOLD_MODERATE) {
+    return "Moderate";
+  } else if (uvIndex < UV_CAT_THRESHOLD_HIGH) {
+    return "High";
+  } else if (uvIndex < UV_CAT_THRESHOLD_VERY_HIGH) {
+    return "Very High";
+  } else {
+    return "Extreme";
+  }
+}
+
 // Converts raw LTR390 UV sensor data to a UV index value, taking into account the current gain and resolution settings of the sensor.
 float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t res)
 {
@@ -312,40 +343,40 @@ float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t re
 // Sky condition based on light level (lux)
 const char* getSky(float lux)
 {
-  if (lux < 50) return "Overcast";
-  if (lux < 500) return "Cloudy";
-  if (lux < 3000) return "Partly cloudy";
+  if (lux < SKY_THRESHOLD_OVERCAST) return "Overcast";
+  if (lux < SKY_THRESHOLD_CLOUDY) return "Cloudy";
+  if (lux < SKY_THRESHOLD_PARTLY_CLOUDY) return "Partly cloudy";
   return "Sunny";
 }
 
 // Temperature description based on Celsius value
 const char* getTemp(float t)
 {
-  if (t < 5) return "very cold";
-  if (t < 12) return "cold";
-  if (t < 18) return "cool";
-  if (t < 24) return "mild";
-  if (t < 30) return "warm";
-  if (t < 36) return "hot";
+  if (t < TEMP_THRESHOLD_VERY_COLD) return "very cold";
+  if (t < TEMP_THRESHOLD_COLD) return "cold";
+  if (t < TEMP_THRESHOLD_COOL) return "cool";
+  if (t < TEMP_THRESHOLD_MILD) return "mild";
+  if (t < TEMP_THRESHOLD_WARM) return "warm";
+  if (t < TEMP_THRESHOLD_HOT) return "hot";
   return "very hot";
 }
 
 // Humidity description based on percentage
 const char* getHumidity(float h)
 {
-  if (h < 20) return "and very dry";
-  if (h < 40) return "and dry";
-  if (h < 60) return "and comfortable";
-  if (h < 80) return "and humid";
+  if (h < HUMIDITY_THRESHOLD_VERY_DRY) return "and very dry";
+  if (h < HUMIDITY_THRESHOLD_DRY) return "and dry";
+  if (h < HUMIDITY_THRESHOLD_COMFORTABLE) return "and comfortable";
+  if (h < HUMIDITY_THRESHOLD_HUMID) return "and humid";
   return "and very humid";
 }
 
 // Precipitation likelihood based on humidity and pressure trend
 const char* getPrecip(float h, float trend)
 {
-  if (trend < -2) return "with occasional showers";
-  if (trend < -1) return "with a few showers possible";
-  if (h < 40) return "with no precipitation expected";
+  if (trend < PRECIP_TREND_THRESHOLD_SHOWERS) return "with occasional showers";
+  if (trend < PRECIP_TREND_THRESHOLD_SHOWERS_POSSIBLE) return "with a few showers possible";
+  if (h < PRECIP_HUMIDITY_THRESHOLD_DRY) return "with no precipitation expected";
   return "and dry conditions";
 }
 
