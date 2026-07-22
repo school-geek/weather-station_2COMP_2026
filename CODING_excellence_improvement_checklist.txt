@@ -1,0 +1,83 @@
+Excellence coding checklist for the weather station project
+
+This checklist is based on your current code and the Excellence criteria in the rubric.
+Last updated: 2026-06-23
+
+COMPLETED IMPROVEMENTS ✅
+
+1. Keep the program clearly structured
+✅ Each major section has a clear purpose (setup, display, sensors, commands, loop).
+✅ Related code is grouped together.
+✅ No unrelated responsibilities mixed in one function.
+
+2. Use constants instead of hard-coded values
+✅ Using constants for intervals: sensorUpdateInterval, newDataInterval.
+✅ Using struct startOfTFT for display positions.
+✅ Using named delay constants: smallDelay, mediumDelay, longDelay, veryLongDelay.
+✅ Using formatMessageOptions array for display parameters.
+✅ Using weather threshold constants in getSky(), getTemp(), getHumidity(), and getPrecip().
+✅ Pin definitions are all constants.
+
+3. Make the code more reusable
+✅ Created buildTFTForecastMessage() to eliminate duplicate forecast logic.
+✅ Created handleCommands() for serial input handling.
+✅ Created handleButtons() for button logic.
+✅ Each helper function has a single, clear purpose.
+
+4. Improve naming and comments
+✅ Function names are clear and descriptive: buildWeatherModel, buildTFTForecastMessage, etc.
+✅ Detailed comments explaining what each section does.
+✅ Comments explain the purpose of code, not just repeating what it says.
+
+5. Make the program logically structured
+✅ The loop() function is clean and acts as a coordinator.
+✅ Major tasks are separated into distinct functions.
+✅ Code is easy to follow and understand.
+
+6. Use advanced techniques effectively
+✅ Methods take parameters and return values appropriately.
+✅ Using structs (SensorData, WeatherModel, startOfTFT) to organize data.
+✅ Using enums (DisplayPage) for state management.
+✅ Using arrays effectively for options and parameters.
+
+REMAINING IMPROVEMENTS
+
+7. Handle invalid or boundary sensor data more explicitly
+- Add more defensive checks for sensors returning NaN or invalid values.
+- Consider safe fallback behavior if one sensor fails.
+- Make sure extreme values (very low/high readings) are handled gracefully.
+
+8. Reduce more hard-coded thresholds in weather functions
+✅ The temperature, humidity, and lux thresholds in getSky(), getTemp(), getHumidity() could be constants.
+ This would make the program easier to adjust and more maintainable.
+
+9. Simplify remaining repeated display code
+- Some repeated TFT setup calls in updateTFT() could be further simplified.
+- Consider if more common patterns can be extracted into helpers.
+
+10. Add more robust input validation
+- Check that sensor data is in expected ranges before using it.
+- Handle edge cases where readings are unexpectedly high/low.
+- Ensure the program continues working even if a sensor fails or returns bad data.
+
+CURRENT STATUS FOR EXCELLENCE RUBRIC
+
+Your code now demonstrates:
+✅ Advanced programming techniques used effectively
+✅ Well-structured and logical program design
+✅ Appropriate use of methods and data structures
+✅ Strong naming and documentation
+✅ Reduced code duplication through helper functions
+✅ Flexible and maintainable code
+
+You are now at SOLID MERIT to NEAR EXCELLENCE level.
+
+To push toward full Excellence:
+1. Add more defensive handling for sensor failures and boundary cases.
+2. Move more thresholds into named constants.
+3. Continue simplifying repeated code patterns where possible.
+
+Priority tasks remaining
+1. Add clearer handling for invalid sensor values and edge cases.
+2. Move temperature/humidity/lux thresholds into constants.
+3. Review and simplify any remaining repeated display patterns.

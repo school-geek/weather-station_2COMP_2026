@@ -1,0 +1,75 @@
+Excellence documentation checklist for the weather station project
+
+This checklist is based on the rubric and the existing project documentation in the workspace.
+Last updated: 2026-06-23
+
+COMPLETED DOCUMENTATION IMPROVEMENTS ✅
+
+1. Code comments and method documentation
+✅ Each major function in `src/main.cpp` has an explanatory comment.
+✅ Comments describe the purpose of code blocks and sections.
+✅ Descriptive names are used for functions, variables, and constants.
+✅ Constants are used for sensor thresholds, pins, and timing values.
+
+2. Planning and project documentation
+✅ Project brief and background are documented in `README.md` and `project_info.md`.
+✅ Files exist for user guidance and external use: `README.md`, `user_manual.md`.
+
+3. Testing documentation
+✅ Code includes notes about debug mode and I2C scanning for troubleshooting.
+✅ The setup section indicates deliberate initialisation and sensor checks.
+
+4. Reflection-ready structure
+✅ The program is organised so a reflection can explain planning, testing, and improvements.
+
+REMAINING DOCUMENTATION IMPROVEMENTS (outside of VS Code)
+
+5. Plan breakdown and task history
+- Add a task breakdown list for the project, showing smaller components.
+- Add a version/change log documenting what was done on each date.
+✅ Add a Gantt-style plan or timeline for major tasks.
+
+6. Implications analysis
+- Write at least two project implications relevant to the brief. (outside of VS Code)
+- Explain how each implication affects design or user experience. (outside of VS Code)
+- Record how those implications were addressed or avoided. (outside of VS Code)
+
+7. Testing evidence and evaluation
+- Create explicit test notes for each sensor and software method.
+- Document expected cases and boundary cases tested.
+- Note improvements made as a result of testing.
+- Add proof that the program compiles and functions.
+
+8. Reflection content
+- Add a final reflection explaining how planning improved the project.
+- Add a final reflection explaining how testing improved the outcome.
+- Document how the completed project meets the brief.
+
+9. UI and user input documentation
+- Describe the button/page interactions and any serial/WebSocket commands.
+- Document how the TFT display and web interface are used.
+- Explain what the user should expect when a sensor fails.
+
+10. File-specific documentation targets
+- `README.md`: project summary, features, usage, and system overview.
+- `project_info.md`: planning, task list, implication analysis, and version log.
+- `user_manual.md`: instructions for using the weather station and troubleshooting.
+- `excellence_improvement_checklist.txt`: keep tracking current progress.
+
+CURRENT STATUS FOR DOCUMENTATION EXCELLENCE
+
+Your documentation now shows:
+✅ Good code commentary and descriptive naming
+✅ A clear separation between program functionality and documentation
+✅ A strong basis for planning and reflection
+
+To reach full Excellence for documentation:
+1. Add task breakdown, version log, and a simple Gantt plan.
+2. Add two implications and show how they were addressed.
+3. Add testing notes, boundary cases, and evidence of improvements.
+4. Add a reflection section that ties planning/testing to the final outcome.
+
+Priority documentation tasks
+1. Document project planning and task history.
+2. Document testing and debugging evidence.
+3. Write reflections on planning, testing, and result quality.
