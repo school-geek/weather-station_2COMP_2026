@@ -48,6 +48,10 @@ bool DEBUG = false;
 // VERBOSE DEBUGING MDOE - set to true for more detailed debug output, false for concise output
 bool VERBOSE = false;
 
+const int ERROR_THRESHOLD = 3; // threshold for sensor error detection
+
+int ERROR_COUNT = 0; // counter for tracking sensor errors
+
 /* -------------------------------------------------------------------------- */
 /* Library class definitions and Library related stuff                        */
 /* -------------------------------------------------------------------------- */
@@ -799,6 +803,7 @@ void initBMP280()
   } else {
     infoOutput("BMP280 not found.");
     bmpPresent = false;
+    ERROR_COUNT++;
   }
 }
 
@@ -809,6 +814,7 @@ void initAHTX0()
     infoOutput("AHT20 found.");
   } else {
     infoOutput("[ERROR] AHT20 not found.");
+    ERROR_COUNT++;
   }
 }
 
@@ -832,6 +838,7 @@ void initLTR390()
 {
   if (!ltr.begin()) {
     infoOutput("[ERROR] LTR390 not found.");
+    ERROR_COUNT++;
   } else {
     infoOutput("LTR390 found.");
     ltr.enable(false);
@@ -868,8 +875,12 @@ void scanI2C()
       count++;
     }
   }
-  if (count == 0) infoOutput("No I2C devices found.");
-  else infoOutput(String(count) + " I2C device(s) found.");
+  if (count == 0) {
+    infoOutput("No I2C devices found.");
+    ERROR_COUNT++;
+  } else {
+    infoOutput(String(count) + " I2C device(s) found.");
+  }
 }
 
 
@@ -943,6 +954,24 @@ void setup()
   initBMP280();
   initAHTX0();
   initLTR390();
+
+  if (ERROR_COUNT >= ERROR_THRESHOLD) {
+    infoOutput("Too many sensor errors. Please check connections.");
+    
+    tft.fillScreen(ST77XX_BLACK);
+    tft.setTextColor(ST77XX_RED);
+    tft.setTextSize(3);
+    tft.setCursor(tftStart.x + 10, tftStart.y + 20);
+    tft.println("ERROR");
+
+    tft.setTextSize(2);
+    tft.setCursor(tftStart.x + 10, tftStart.y + 50);
+    tft.println("Restart Device");
+    tft.setCursor(tftStart.x + 10, tftStart.y + 70);
+    tft.println("or");
+    tft.setCursor(tftStart.x + 10, tftStart.y + 90);
+    tft.println("Check Connections");
+  }
 }
 
 // Display text with max X words and Y chars per line
