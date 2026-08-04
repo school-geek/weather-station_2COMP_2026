@@ -1,0 +1,20 @@
+# Milestone commits for video testing evidence
+
+1. git switch --detach 37c0af8
+   Commit 37c0af8 (2026-03-03): Start project using PlatformIO; chosen as the first clear coding state after project setup and the beginning of the codebase.
+
+2. git switch --detach 9236ad5
+   Commit 9236ad5 (2026-04-23): Working ESP32; chosen to show the first working hardware platform and base firmware integration.
+
+3. git switch --detach d52abe8
+   Commit d52abe8 (2026-05-21): Working temp, pressure, humidity sensors; chosen as the first evidence of multiple sensor readings working together.
+
+4. git switch --detach fa215fc
+   Commit fa215fc (2026-06-12): Working forecast on TFT; chosen to show the addition of display output and user-facing forecast information.
+
+5. git switch --detach 0008fc7
+   Commit 0008fc7 (2026-08-04): Added ERROR protection and handling; chosen as the latest polished version with error handling and final system improvements.
+
+# Notes
+- Run these commands from the repository root: c:\Users\felix\Desktop\COMP SCI\Weather Staion
+- If you want to return to the latest branch after testing, use: git switch main
