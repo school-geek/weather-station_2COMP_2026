@@ -289,6 +289,32 @@ void infoOutput(String str)
   Serial.println(str);
 }
 
+// Checks the error count and displays an error message on the TFT if the threshold is exceeded.
+void checkErrorCount()
+{
+    if (ERROR_COUNT >= ERROR_THRESHOLD) {
+    infoOutput("Too many sensor errors. Please check connections.");
+    
+    tft.fillScreen(ST77XX_BLACK);
+    tft.setTextColor(ST77XX_RED);
+    tft.setTextSize(3);
+    tft.setCursor(tftStart.x + 10, tftStart.y + 20);
+    tft.println("ERROR");
+
+    tft.setTextSize(2);
+    tft.setCursor(tftStart.x + 10, tftStart.y + 50);
+    tft.println("Restart Device");
+    tft.setCursor(tftStart.x + 10, tftStart.y + 70);
+    tft.println("or");
+    tft.setCursor(tftStart.x + 10, tftStart.y + 90);
+    tft.println("Check Connections");
+    
+    delay(veryLongDelay);
+
+    ERROR_COUNT = 0; // reset error count after displaying the message
+  }
+}
+
 // Helper function to convert LTR390 gain enum to actual gain factor for calculations
 float getLTRGainFactor(ltr390_gain_t gain)
 {
@@ -480,6 +506,7 @@ String processData(const SensorData &data)
   else
   {
     out += "AHT: invalid";
+    ERROR_COUNT++;
   }
 
   out += " || ";
@@ -498,6 +525,7 @@ String processData(const SensorData &data)
   else
   {
     out += "LTR390: invalid";
+    ERROR_COUNT++;
   }
 
   /* ===================== "METSERVICE" ADDITION ===================== */
@@ -608,6 +636,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
   else
   {
     webSocket.sendTXT(num, "ERR: unknown command");
+    ERROR_COUNT++;
   }
 }
   }
@@ -927,6 +956,7 @@ void setup()
   else if (!ok)
   {
     debugOutputSTR("[ERROR] Failed to start AP");
+    ERROR_COUNT++;
   }
 
   // Web server routes
@@ -955,23 +985,8 @@ void setup()
   initAHTX0();
   initLTR390();
 
-  if (ERROR_COUNT >= ERROR_THRESHOLD) {
-    infoOutput("Too many sensor errors. Please check connections.");
-    
-    tft.fillScreen(ST77XX_BLACK);
-    tft.setTextColor(ST77XX_RED);
-    tft.setTextSize(3);
-    tft.setCursor(tftStart.x + 10, tftStart.y + 20);
-    tft.println("ERROR");
-
-    tft.setTextSize(2);
-    tft.setCursor(tftStart.x + 10, tftStart.y + 50);
-    tft.println("Restart Device");
-    tft.setCursor(tftStart.x + 10, tftStart.y + 70);
-    tft.println("or");
-    tft.setCursor(tftStart.x + 10, tftStart.y + 90);
-    tft.println("Check Connections");
-  }
+  /* Check for sensor errors */
+  checkErrorCount();
 }
 
 // Display text with max X words and Y chars per line
@@ -1142,6 +1157,7 @@ void updateTFT(const SensorData &data)
     tft.print(getSky(lux));
   else
     tft.print("N/A");
+    ERROR_COUNT++;
 
   // ===== UV =====
   tft.setCursor(tftStart.x, tftStart.y + 100);
@@ -1223,6 +1239,8 @@ void updateSensors()
       data.ltrALS = NAN;
       data.ltrLux = NAN;
       debugOutputSTR("LTR ALS: no data");
+      
+      ERROR_COUNT++;
     }
 
     // UVS (UV light)
@@ -1248,6 +1266,8 @@ void updateSensors()
       data.ltrUVS = NAN;
       data.ltrUVIndex = NAN;
       debugOutputSTR("LTR UVS: no data");
+      
+      ERROR_COUNT++;
     }
   }
   else
@@ -1367,4 +1387,7 @@ void loop()
 
   // Button state handling for page switching
   handleButtons();
+
+  // Check for sensor errors
+  checkErrorCount();
 }
