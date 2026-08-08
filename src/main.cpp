@@ -309,9 +309,9 @@ void checkErrorCount()
     tft.setCursor(tftStart.x + 10, tftStart.y + 90);
     tft.println("Check Connections");
     
-    delay(veryLongDelay);
-
     ERROR_COUNT = 0; // reset error count after displaying the message
+
+    delay(veryLongDelay);
   }
 }
 
