@@ -83,6 +83,9 @@ Adafruit_LTR390 ltr;
 /* Global variables */
 float tempSensorValue = 0;
 
+// latch for controlling debug output
+bool latch = false;
+
 // Timing variable for debug output
 unsigned long lastPrint = 0;
 
@@ -636,7 +639,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
   else
   {
     webSocket.sendTXT(num, "ERR: unknown command");
-    ERROR_COUNT++;
   }
 }
   }
@@ -906,7 +908,6 @@ void scanI2C()
   }
   if (count == 0) {
     infoOutput("No I2C devices found.");
-    ERROR_COUNT++;
   } else {
     infoOutput(String(count) + " I2C device(s) found.");
   }
@@ -956,7 +957,6 @@ void setup()
   else if (!ok)
   {
     debugOutputSTR("[ERROR] Failed to start AP");
-    ERROR_COUNT++;
   }
 
   // Web server routes
@@ -1296,12 +1296,15 @@ It only runs with DEBUG mode enabled, and it has access to Serial monitor
 */
 void handleCommands()
 {
-  if (!Serial.available() && !DEBUG)
+  if (!Serial.available() && !latch )
   {
     infoOutput("Serial input available, but DEBUG mode is off so ignoring...");
+    latch = true;
   }
   else{
-    debugOutputSTR("Serial input detected");
+    if (VERBOSE)  {
+      debugOutputSTR("Serial input detected");
+    }
   
     String serialInput = Serial.readString();
     if(serialInput == "update")
