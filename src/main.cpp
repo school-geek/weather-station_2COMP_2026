@@ -361,10 +361,9 @@ String getUVCategory(float uvIndex)
 }
 
 // Converts raw LTR390 UV sensor data to a UV index value, taking into account the current gain and resolution settings of the sensor.
-float computeLTRUVIndex(uint32_t raw, ltr390_gain_t gain, ltr390_resolution_t res)
+float computeLTRUVIndex(uint32_t raw)
 {
-  // The raw UV count from the LTR390 already reflects the current gain.
-  // Use a simple conversion constant so higher gain raises the reported index.
+  // Convert raw UV sensor counts to a UV index value.
   const float UV_INDEX_SCALE = 23.0; // empirical calibration constant for your current setup
   return raw / UV_INDEX_SCALE;
 }
@@ -444,7 +443,7 @@ WeatherModel buildWeatherModel(const SensorData &data)
 String buildTFTForecastMessage(const SensorData &data, const WeatherModel &w)
 {
   const float lux = 0.6f * data.ltrALS / (3.0f * 1.0f);
-  const float uvIndex = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
+  const float uvIndex = computeLTRUVIndex(data.ltrUVS);
 
   const char* sky = getSky(lux);
   const char* temp = getTemp(w.temp);
@@ -515,7 +514,7 @@ String processData(const SensorData &data)
   if (!isnan(data.ltrALS) && !isnan(data.ltrUVS))
   {
     float ltrLux = 0.6 * data.ltrALS / (3.0 * 1.0);
-    float ltrUVIndex = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
+    float ltrUVIndex = computeLTRUVIndex(data.ltrUVS);
 
     out += "Light: " + String(ltrLux, 1) + " lux";
     out += " | UV Index: " + String(ltrUVIndex, 1) + " (" + getUVCategory(ltrUVIndex) + ")";
@@ -529,35 +528,8 @@ String processData(const SensorData &data)
   }
 
   /* ===================== "METSERVICE" ADDITION ===================== */
-
   WeatherModel w = buildWeatherModel(data);
-
-  float ltrLux = 0.6 * data.ltrALS / (3.0 * 1.0);
-  String sky = getSky(ltrLux);
-
-  String temp = getTemp(w.temp);
-
-  String hum = getHumidity(w.humidity);
-
-  String precip = getPrecip(w.humidity, w.pressureTrend);
-
-  
-  String metServiceText = "";
-
-  int style = random(0, 3);
-
-  if (style == 0)
-  {
-    metServiceText = String(sky) + ", " + temp + " " + hum + " " + precip;
-  }
-  else if (style == 1)
-  {
-    metServiceText = String(sky) + " with " + temp + " conditions " + hum;
-  }
-  else
-  {
-    metServiceText = "Sunny with " + String(temp) + " and " + hum;
-  }
+  String metServiceText = buildTFTForecastMessage(data, w);
 
   out += " || MET: " + metServiceText;
 
@@ -1000,7 +972,8 @@ It then prints each line to the display with proper spacing.
 void displayFormattedMessage(String message, int startX, int startY, int lineHeight, int maxCharsPerLine, int maxWordsPerLine)
 {
   // Split message into words
-  String words[50];
+  const int MAX_WORDS = 50;
+  String words[MAX_WORDS];
   int wordCount = 0;
   String currentWord = "";
   
@@ -1010,7 +983,10 @@ void displayFormattedMessage(String message, int startX, int startY, int lineHei
     {
       if (currentWord.length() > 0)
       {
-        words[wordCount++] = currentWord;
+        if (wordCount < MAX_WORDS)
+        {
+          words[wordCount++] = currentWord;
+        }
         currentWord = "";
       }
     }
@@ -1019,7 +995,7 @@ void displayFormattedMessage(String message, int startX, int startY, int lineHei
       currentWord += message[i];
     }
   }
-  if (currentWord.length() > 0) {
+  if (currentWord.length() > 0 && wordCount < MAX_WORDS) {
     words[wordCount++] = currentWord;
   }
 
@@ -1169,7 +1145,7 @@ void updateTFT(const SensorData &data)
 
   if (!isnan(data.ltrUVS))
   {
-    float uv = computeLTRUVIndex(data.ltrUVS, ltr.getGain(), ltr.getResolution());
+    float uv = computeLTRUVIndex(data.ltrUVS);
     tft.print(uv, 1);
   }
   else tft.print("N/A");
