@@ -1154,12 +1154,14 @@ void updateTFT(const SensorData &data)
   tft.setTextColor(ST77XX_YELLOW);
   tft.print("Sky: ");
 
-  if (!isnan(lux))
+  if (!isnan(lux)) {
     tft.print(getSky(lux));
-  else
+  }
+  else {
     tft.print("N/A");
     ERROR_COUNT++;
-
+  }
+  
   // ===== UV =====
   tft.setCursor(tftStart.x, tftStart.y + 100);
   tft.print("UV: ");
