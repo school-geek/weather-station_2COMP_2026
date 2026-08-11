@@ -83,6 +83,9 @@ Adafruit_LTR390 ltr;
 /* Global variables */
 float tempSensorValue = 0;
 
+// latch for controlling debug output
+bool latch = false;
+
 // Timing variable for debug output
 unsigned long lastPrint = 0;
 
@@ -309,9 +312,9 @@ void checkErrorCount()
     tft.setCursor(tftStart.x + 10, tftStart.y + 90);
     tft.println("Check Connections");
     
-    delay(veryLongDelay);
-
     ERROR_COUNT = 0; // reset error count after displaying the message
+
+    delay(veryLongDelay);
   }
 }
 
@@ -608,7 +611,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
   else
   {
     webSocket.sendTXT(num, "ERR: unknown command");
-    ERROR_COUNT++;
   }
 }
   }
@@ -878,7 +880,6 @@ void scanI2C()
   }
   if (count == 0) {
     infoOutput("No I2C devices found.");
-    ERROR_COUNT++;
   } else {
     infoOutput(String(count) + " I2C device(s) found.");
   }
@@ -928,7 +929,6 @@ void setup()
   else if (!ok)
   {
     debugOutputSTR("[ERROR] Failed to start AP");
-    ERROR_COUNT++;
   }
 
   // Web server routes
@@ -1266,41 +1266,65 @@ void updateSensors()
   updateTFT(data);
 }
 
+// Display a message on the TFT screen from a serial command.
+void displaySerialMessageOnTFT(String message)
+{
+  message.trim();
+
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(tftStart.x, tftStart.y);
+  tft.setTextWrap(true);
+  tft.println(message);
+}
+
 // Serial input handling for debug commands
 /*
 This allows you to type commands into the Serial Monitor to trigger actions in the program.
-For example, typing "update" will call updateSensors() immediately, and typing
- "send" followed by a message will send that message to all connected WebSocket clients.
-
-It only runs with DEBUG mode enabled, and it has access to Serial monitor
+For example, typing "update" will call updateSensors() immediately, typing
+"send" followed by a message will send that message to all connected WebSocket clients,
+and typing "screen: Hello world" will show that text on the TFT display.
 */
 void handleCommands()
 {
-  if (!Serial.available() && !DEBUG)
+  if (!Serial.available())
   {
-    infoOutput("Serial input available, but DEBUG mode is off so ignoring...");
+    return;
   }
-  else{
+
+  if (VERBOSE) {
     debugOutputSTR("Serial input detected");
-  
-    String serialInput = Serial.readString();
-    if(serialInput == "update")
-    {
-      updateSensors();
-    }
-  
-    else if (serialInput.startsWith("send "))
-    {
-      // Extract everything after "send "
-      String dataToSend = serialInput.substring(5);
+  }
 
-      // Send the extracted data to the website
-      sendToWebsite(dataToSend);
+  String serialInput = Serial.readStringUntil('\n');
+  serialInput.trim();
 
-      // Optional confirmation in Serial Monitor
-      infoOutput("Sent to website: ");
-      infoOutput(dataToSend);
-    }
+  if (serialInput.length() == 0)
+  {
+    return;
+  }
+
+  if (serialInput.equalsIgnoreCase("update"))
+  {
+    updateSensors();
+  }
+  else if (serialInput.startsWith("send "))
+  {
+    // Extract everything after "send "
+    String dataToSend = serialInput.substring(5);
+
+    // Send the extracted data to the website
+    sendToWebsite(dataToSend);
+
+    // Optional confirmation in Serial Monitor
+    infoOutput("Sent to website: ");
+    infoOutput(dataToSend);
+  }
+  else if (serialInput.startsWith("screen: "))
+  {
+    String screenText = serialInput.substring(8);
+    displaySerialMessageOnTFT(screenText);
   }
 }
 
