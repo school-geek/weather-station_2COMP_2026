@@ -1019,9 +1019,10 @@ void displayFormattedMessage(String message, int startX, int startY, int lineHei
       currentWord += message[i];
     }
   }
-  if (currentWord.length() > 0)
+  if (currentWord.length() > 0) {
     words[wordCount++] = currentWord;
-  
+  }
+
   int currentY = startY;
   int charsOnLine = 0;
   int wordsOnLine = 0;
@@ -1086,7 +1087,7 @@ void updateTFT(const SensorData &data)
   }
 
     if (currentPage == PAGE_FORECAST)
-  {
+    {
     // Show ONLY the weather message
     WeatherModel w = buildWeatherModel(data);
     const String met = buildTFTForecastMessage(data, w);
@@ -1161,7 +1162,7 @@ void updateTFT(const SensorData &data)
     tft.print("N/A");
     ERROR_COUNT++;
   }
-  
+
   // ===== UV =====
   tft.setCursor(tftStart.x, tftStart.y + 100);
   tft.print("UV: ");
