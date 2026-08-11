@@ -1146,8 +1146,9 @@ void updateTFT(const SensorData &data)
 
   // ===== LIGHT =====
   float lux = NAN;
-  if (!isnan(data.ltrALS))
+  if (!isnan(data.ltrALS)) {
     lux = 0.6 * data.ltrALS / 3.0;
+  }
 
   tft.setCursor(tftStart.x, tftStart.y + 80);
   tft.setTextColor(ST77XX_YELLOW);
