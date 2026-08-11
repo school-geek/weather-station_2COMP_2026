@@ -1104,7 +1104,9 @@ void updateTFT(const SensorData &data)
     tft.print(data.bmpPressure);
     tft.print("hPa");
   }
-  else tft.print("N/A");
+  else {
+    tft.print("N/A");
+  }
 
   // ===== AHT =====
   tft.setCursor(tftStart.x, tftStart.y + 40);
@@ -1119,7 +1121,9 @@ void updateTFT(const SensorData &data)
     tft.print(data.ahtHumidity);
     tft.print("%");
   }
-  else tft.print("N/A");
+  else {
+    tft.print("N/A");
+  }
 
   // ===== LIGHT =====
   float lux = NAN;
@@ -1148,7 +1152,9 @@ void updateTFT(const SensorData &data)
     float uv = computeLTRUVIndex(data.ltrUVS);
     tft.print(uv, 1);
   }
-  else tft.print("N/A");
+  else {
+    tft.print("N/A");
+  }
 }
 
 // Reads sensors, processes data, sends to website, and updates TFT display
