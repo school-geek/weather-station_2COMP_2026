@@ -83,9 +83,6 @@ Adafruit_LTR390 ltr;
 /* Global variables */
 float tempSensorValue = 0;
 
-// latch for controlling debug output
-bool latch = false;
-
 // Timing variable for debug output
 unsigned long lastPrint = 0;
 
@@ -363,10 +360,9 @@ String getUVCategory(float uvIndex)
   }
 }
 
-// Converts raw LTR390 UV sensor data to a UV index value, taking into account the current gain and resolution settings of the sensor.
+// Converts raw LTR390 UV sensor counts to a UV index value using a calibration constant.
 float computeLTRUVIndex(uint32_t raw)
 {
-  // Convert raw UV sensor counts to a UV index value.
   const float UV_INDEX_SCALE = 23.0; // empirical calibration constant for your current setup
   return raw / UV_INDEX_SCALE;
 }
@@ -971,63 +967,51 @@ It then prints each line to the display with proper spacing.
 */
 void displayFormattedMessage(String message, int startX, int startY, int lineHeight, int maxCharsPerLine, int maxWordsPerLine)
 {
-  // Split message into words
-  const int MAX_WORDS = 50;
-  String words[MAX_WORDS];
-  int wordCount = 0;
-  String currentWord = "";
-  
-  for (int i = 0; i < message.length(); i++)
-  {
-    if (message[i] == ' ')
-    {
-      if (currentWord.length() > 0)
-      {
-        if (wordCount < MAX_WORDS)
-        {
-          words[wordCount++] = currentWord;
-        }
-        currentWord = "";
-      }
-    }
-    else
-    {
-      currentWord += message[i];
-    }
-  }
-  if (currentWord.length() > 0 && wordCount < MAX_WORDS) {
-    words[wordCount++] = currentWord;
-  }
-
   int currentY = startY;
   int charsOnLine = 0;
   int wordsOnLine = 0;
+  String currentWord = "";
+
   tft.setCursor(startX, currentY);
-  
-  for (int i = 0; i < wordCount; i++)
+
+  for (int i = 0; i <= message.length(); i++)
   {
-    int wordLength = words[i].length();
-    int spaceNeeded = (wordsOnLine > 0) ? 1 : 0;  // space before word if not first
-    
-    // Check if we need to move to next line (hit word limit OR char limit)
-    if (wordsOnLine >= maxWordsPerLine || (charsOnLine + spaceNeeded + wordLength > maxCharsPerLine && wordsOnLine > 0))
+    char c = (i < message.length()) ? message[i] : ' ';
+
+    if (c == ' ')
     {
-      currentY += lineHeight;
-      tft.setCursor(startX, currentY);
-      charsOnLine = 0;
-      wordsOnLine = 0;
+      if (currentWord.length() == 0)
+      {
+        continue;
+      }
+
+      int wordLength = currentWord.length();
+      int spaceNeeded = (wordsOnLine > 0) ? 1 : 0;
+
+      if (wordsOnLine >= maxWordsPerLine || (charsOnLine + spaceNeeded + wordLength > maxCharsPerLine && wordsOnLine > 0))
+      {
+        currentY += lineHeight;
+        tft.setCursor(startX, currentY);
+        charsOnLine = 0;
+        wordsOnLine = 0;
+        spaceNeeded = 0;
+      }
+
+      if (wordsOnLine > 0)
+      {
+        tft.print(" ");
+        charsOnLine++;
+      }
+
+      tft.print(currentWord);
+      charsOnLine += wordLength;
+      wordsOnLine++;
+      currentWord = "";
     }
-    
-    // Add space if not first word on line
-    if (wordsOnLine > 0)
+    else
     {
-      tft.print(" ");
-      charsOnLine++;
+      currentWord += c;
     }
-    
-    tft.print(words[i]);
-    charsOnLine += wordLength;
-    wordsOnLine++;
   }
 }
 
