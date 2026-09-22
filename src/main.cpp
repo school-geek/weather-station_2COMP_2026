@@ -20,6 +20,8 @@
 // light sensor
 #include <Adafruit_LTR390.h>
 
+// FINAL_VERSION = true;
+
 /*
 Felix Love
 22153
