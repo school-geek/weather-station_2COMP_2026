@@ -1,0 +1,42 @@
+Weather Station Feature Test Cases
+=================================
+
+1. Device startup and display
+1.1 Turn on the device with a disconnected or missing sensor and confirm the screen still starts up safely. Expected outcome: The device boots normally and shows the startup screen without freezing or crashing.
+1.2 Turn on the device and leave it running for a long time to confirm the display remains stable. Expected outcome: The display stays on and does not flicker, freeze, or show errors over time.
+1.3 Turn on the device normally and confirm the startup screen appears and the display initializes correctly. Expected outcome: The startup image and menus load correctly and the display is readable.
+
+2. Page navigation buttons
+2.1 Press a button at the wrong time or when the page is already active and confirm the system does not crash. Expected outcome: The interface ignores invalid input and continues running normally.
+2.2 Hold a navigation button down for several seconds and confirm the display still changes to the correct page. Expected outcome: The page switch still occurs and the system stays responsive.
+2.3 Press D0, D1, and D2 normally and confirm the Home, Forecast, and Data pages appear in order. Expected outcome: Each button opens its correct page without delay.
+
+3. Sensor reading and data collection
+3.1 Disconnect or block a sensor and confirm the program handles the missing data without freezing. Expected outcome: The system reports the missing sensor safely and continues operating.
+3.2 Expose the sensors to extremely low or extremely high conditions and confirm the readings are still reported safely. Expected outcome: The sensor values stay within safe display bounds and do not break the interface.
+3.3 Let the sensors read normal room conditions and confirm the values appear on the screen and web interface. Expected outcome: The temperature, humidity, and other values display correctly in both interfaces.
+
+4. Weather forecast generation
+4.1 Feed the forecast system a missing or invalid sensor value and confirm it does not produce a broken message. Expected outcome: The forecast shows a fallback or safe message rather than invalid text.
+4.2 Use values exactly at the threshold points such as very low light, very high humidity, or very low temperature and confirm the forecast changes correctly. Expected outcome: The forecast logic selects the right weather message for the threshold values.
+4.3 Use normal weather values and confirm the forecast message is clear and sensible. Expected outcome: The forecast text reads like a normal weather summary and is easy to understand.
+
+5. WebSocket command handling
+5.1 Send an unknown command such as "banana" and confirm the system responds with an error message/ignores it. Expected outcome: The system returns an error or ignores the command without failing.
+5.2 Send an empty command or a command with no argument and confirm the system handles it gracefully. Expected outcome: No crash occurs and a safe response is provided.
+5.3 Send "update" and confirm the system responds with the expected update message. Expected outcome: The device replies with an update confirmation and refreshes the data.
+
+6. Web page and live data updates
+6.1 Open the web page with a broken/weak connection and confirm the page still loads safely. Expected outcome: The page loads with fallback behavior and does not show a broken layout.
+6.2 Connect a device to the web page, leave it running for a long time, and confirm the data still updates without major errors. Expected outcome: Live data keeps refreshing and the page remains stable.
+6.3 Open the web page normally and confirm the live weather data appears and updates. Expected outcome: Current readings appear quickly and refresh correctly.
+
+7. TFT display
+7.1 Send a unnormal message to the display and confirm it does not cause a display error. Expected outcome: The display ignores or sanitizes the unusual text and stays on.
+7.2 Send a very long message and confirm it displays. Expected outcome: The display either wraps or truncates the text safely without crashing.
+7.3 Send a normal forecast message and confirm it appears clearly on the display with readable line breaks. Expected outcome: The message shows properly formatted and readable text.
+
+8. Serial debug commands
+8.1 Type an unknown command into the serial monitor and confirm the program ignores it safely. Expected outcome: The device prints an error or ignores the input without stopping.
+8.2 Type a command with extra spaces or blank input and confirm the program handles it without crashing. Expected outcome: The input is sanitized and the system continues running normally.
+8.3 Type "update" into the serial monitor and confirm the sensors refresh and the display updates. Expected outcome: The device refreshes sensor readings and the display reflects the new data.

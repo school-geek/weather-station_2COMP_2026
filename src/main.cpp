@@ -58,7 +58,7 @@ int ERROR_COUNT = 0; // counter for tracking sensor errors
 
 // Wi-Fi credentials
 const char* SSID = "Code-ESP32";
-const char* PASSWORD = "12345678";
+const char* PASSWORD = "V9#rK2!mQ7@xP4$wL8";
 
 // Built-in TFT display object (ST7789 controller)
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
@@ -447,27 +447,12 @@ String buildTFTForecastMessage(const SensorData &data, const WeatherModel &w)
   const char* sky = getSky(lux);
   const char* temp = getTemp(w.temp);
   const char* hum = getHumidity(w.humidity);
-  const char* precip = getPrecip(w.humidity, w.pressureTrend);
-
-  const int styleIndex = clampIndex(random(0, 4), 3);
   const String skyText = String(sky);
   const String tempText = String(temp);
   const String humText = String(hum);
-  const String precipText = String(precip);
   const String uvCategory = getUVCategory(uvIndex);
 
-  if (styleIndex == 0)
-  {
-    return skyText + ", " + tempText + " " + humText + " " + precipText;
-  }
-  else if (styleIndex == 1)
-  {
-    return skyText + " with " + tempText + " conditions " + humText;
-  }
-  else
-  {
-    return skyText + " (" + uvCategory + ") with " + tempText + " and " + humText;
-  }
+  return skyText + " (" + uvCategory + ") with " + tempText + " " + humText;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -918,8 +903,6 @@ void setup()
     debugOutputSTR("AP STARTED");
 
     debugOutputSTR("AP SSID: " + String(SSID));
-    debugOutputSTR("AP Password: " + String(PASSWORD));
-
     debugOutputSTR("AP IP: " + WiFi.softAPIP().toString());
   }
   else if (!ok)

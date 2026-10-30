@@ -82,7 +82,7 @@ The weather station creates its own WiFi network for remote monitoring:
 
 1. **On your device (phone, tablet, laptop):**
    - Find WiFi network: `Code-ESP32`
-   - Enter password: `12345678`
+   - Enter password: `V9#rK2!mQ7@xP4$wL8`
 
 2. **Access the web interface:**
    - Open a web browser
